@@ -727,7 +727,7 @@ proc zrange*(r: Redis, key: string, start: string, stop: string,
   if not withScores:
     r.sendCommand("ZRANGE", key, start, stop)
   else:
-    r.sendCommand("ZRANGE", "WITHSCORES", key, start, stop)
+    r.sendCommand("ZRANGE", key, start, stop, "WITHSCORES")
   return r.readArray()
 
 proc zrangebyscore*(r: Redis, key: string, min: string, max: string,
