@@ -711,7 +711,7 @@ proc zinterstore*(r: Redis, destination: string, numkeys: string,
   for i in items(keys): args.add(i)
 
   if weights.len != 0:
-    args.add("WITHSCORES")
+    args.add("WEIGHTS")
     for i in items(weights): args.add(i)
   if aggregate.len != 0:
     args.add("AGGREGATE")
