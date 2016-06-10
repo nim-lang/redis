@@ -772,7 +772,7 @@ proc zrevrange*(r: Redis, key: string, start: string, stop: string,
   ## Return a range of members in a sorted set, by index,
   ## with scores ordered from high to low
   if withScore:
-    r.sendCommand("ZREVRANGE", "WITHSCORE", key, start, stop)
+    r.sendCommand("ZREVRANGE", key, start, stop, "WITHSCORES")
   else: r.sendCommand("ZREVRANGE", key, start, stop)
   return r.readArray()
 
