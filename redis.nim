@@ -711,7 +711,7 @@ proc zinterstore*(r: Redis, destination: string, numkeys: string,
   for i in items(keys): args.add(i)
 
   if weights.len != 0:
-    args.add("WITHSCORE")
+    args.add("WITHSCORES")
     for i in items(weights): args.add(i)
   if aggregate.len != 0:
     args.add("AGGREGATE")
@@ -783,7 +783,7 @@ proc zrevrangebyscore*(r: Redis, key: string, min: string, max: string,
   ## scores ordered from high to low
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORE")
+  if withScore: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
