@@ -736,7 +736,7 @@ proc zrangebyscore*(r: Redis, key: string, min: string, max: string,
   ## Return a range of members in a sorted set, by score
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORE")
+  if withScore: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
