@@ -772,6 +772,18 @@ proc zrangebyscore*(r: Redis, key: string, min: string, max: string,
   r.sendCommand("ZRANGEBYSCORE", args)
   return r.readArray()
 
+proc zrangebylex*(r: Redis, key: string, start: string, stop: string,
+                  limit: bool = false, limitOffset: int = 0,
+                  limitCount: int = 0): RedisList =
+  ## Return a range of members in a sorted set, ordered lexicographically
+  var args = @[key, start, stop]
+  if limit:
+    args.add("LIMIT")
+    args.add($limitOffset)
+    args.add($limitCount)
+  r.sendCommand("ZRANGEBYLEX", args)
+  return r.readArray()
+
 proc zrank*(r: Redis, key: string, member: string): RedisString =
   ## Determine the index of a member in a sorted set
   r.sendCommand("ZRANK", key, member)
