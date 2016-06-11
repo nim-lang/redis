@@ -382,10 +382,12 @@ proc getBit*(r: Redis, key: string, offset: int): RedisInteger =
   return r.readInteger()
 
 proc bitCount*(r: Redis, key: string, limits: varargs[string]): RedisInteger =
+  ## Returns the number of set bits, optionally within limits
   r.sendCommand("BITCOUNT", key, limits)
   return r.readInteger()
 
 proc bitPos*(r: Redis, key: string, bit: int, limits: varargs[string]): RedisInteger =
+  ##Returns position of the first occurence of bit within limits
   r.sendCommand("BITPOS", key, $bit, limits)
   return r.readInteger()
 
