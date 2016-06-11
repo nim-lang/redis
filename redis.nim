@@ -370,9 +370,18 @@ proc get*(r: Redis, key: string): RedisString =
   r.sendCommand("GET", key)
   return r.readBulkString()
 
+#TODO: BITOP
 proc getBit*(r: Redis, key: string, offset: int): RedisInteger =
   ## Returns the bit value at offset in the string value stored at key
   r.sendCommand("GETBIT", key, $offset)
+  return r.readInteger()
+
+proc bitCount*(r: Redis, key: string, limits: varargs[string]): RedisInteger =
+  r.sendCommand("BITCOUNT", key, limits)
+  return r.readInteger()
+
+proc bitPos*(r: Redis, key: string, bit: int, limits: varargs[string]): RedisInteger =
+  r.sendCommand("BITPOS", key, $bit, limits)
   return r.readInteger()
 
 proc getRange*(r: Redis, key: string, start, stop: int): RedisString =
@@ -395,6 +404,8 @@ proc incrBy*(r: Redis, key: string, increment: int): RedisInteger =
   ## Increment the integer value of a key by the given number
   r.sendCommand("INCRBY", key, $increment)
   return r.readInteger()
+
+#TODO msetk, incrbyfloat
 
 proc setk*(r: Redis, key, value: string) =
   ## Set the string value of a key.
