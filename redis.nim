@@ -749,7 +749,7 @@ proc zinterstore*(r: Redis, destination: string, numkeys: string,
   return r.readInteger()
 
 proc zrange*(r: Redis, key: string, start: string, stop: string,
-            withScores: bool): RedisList =
+            withScores: bool = false): RedisList =
   ## Return a range of members in a sorted set, by index
   if not withScores:
     r.sendCommand("ZRANGE", key, start, stop)
@@ -758,12 +758,12 @@ proc zrange*(r: Redis, key: string, start: string, stop: string,
   return r.readArray()
 
 proc zrangebyscore*(r: Redis, key: string, min: string, max: string,
-                   withScore: bool = false, limit: bool = false,
+                   withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): RedisList =
   ## Return a range of members in a sorted set, by score
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORES")
+  if withScores: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
@@ -807,22 +807,22 @@ proc zremrangebyscore*(r: Redis, key: string, min: string,
   return r.readInteger()
 
 proc zrevrange*(r: Redis, key: string, start: string, stop: string,
-               withScore: bool): RedisList =
+               withScores: bool = false): RedisList =
   ## Return a range of members in a sorted set, by index,
   ## with scores ordered from high to low
-  if withScore:
+  if withScores:
     r.sendCommand("ZREVRANGE", key, start, stop, "WITHSCORES")
   else: r.sendCommand("ZREVRANGE", key, start, stop)
   return r.readArray()
 
 proc zrevrangebyscore*(r: Redis, key: string, min: string, max: string,
-                   withScore: bool = false, limit: bool = false,
+                   withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): RedisList =
   ## Return a range of members in a sorted set, by score, with
   ## scores ordered from high to low
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORES")
+  if withScores: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
