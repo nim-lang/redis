@@ -365,6 +365,11 @@ proc decrBy*(r: Redis, key: string, decrement: int): RedisInteger =
   r.sendCommand("DECRBY", key, $decrement)
   return r.readInteger()
 
+proc mget*(r: Redis, keys: varargs[string]): RedisList =
+  ## Get the values of all given keys
+  r.sendCommand("MGET", keys)
+  return r.readArray()
+
 proc get*(r: Redis, key: string): RedisString =
   ## Get the value of a key. Returns `redisNil` when `key` doesn't exist.
   r.sendCommand("GET", key)
@@ -405,7 +410,16 @@ proc incrBy*(r: Redis, key: string, increment: int): RedisInteger =
   r.sendCommand("INCRBY", key, $increment)
   return r.readInteger()
 
-#TODO msetk, incrbyfloat
+#TODO incrbyfloat
+
+proc msetk*(r: Redis, keyValues: openarray[tuple[key, value: string]]) =
+  ## Set mupltiple keys to multplie values
+  var args: seq[string] = @[]
+  for key, value in items(keyValues):
+    args.add(key)
+    args.add(value)
+  r.sendCommand("MSET", args)
+  raiseNoOK(r.readStatus(), r.pipeline.enabled)
 
 proc setk*(r: Redis, key, value: string) =
   ## Set the string value of a key.
