@@ -365,14 +365,30 @@ proc decrBy*(r: Redis, key: string, decrement: int): RedisInteger =
   r.sendCommand("DECRBY", key, $decrement)
   return r.readInteger()
 
+proc mget*(r: Redis, keys: varargs[string]): RedisList =
+  ## Get the values of all given keys
+  r.sendCommand("MGET", keys)
+  return r.readArray()
+
 proc get*(r: Redis, key: string): RedisString =
   ## Get the value of a key. Returns `redisNil` when `key` doesn't exist.
   r.sendCommand("GET", key)
   return r.readBulkString()
 
+#TODO: BITOP
 proc getBit*(r: Redis, key: string, offset: int): RedisInteger =
   ## Returns the bit value at offset in the string value stored at key
   r.sendCommand("GETBIT", key, $offset)
+  return r.readInteger()
+
+proc bitCount*(r: Redis, key: string, limits: varargs[string]): RedisInteger =
+  ## Returns the number of set bits, optionally within limits
+  r.sendCommand("BITCOUNT", key, limits)
+  return r.readInteger()
+
+proc bitPos*(r: Redis, key: string, bit: int, limits: varargs[string]): RedisInteger =
+  ##Returns position of the first occurence of bit within limits
+  r.sendCommand("BITPOS", key, $bit, limits)
   return r.readInteger()
 
 proc getRange*(r: Redis, key: string, start, stop: int): RedisString =
@@ -395,6 +411,17 @@ proc incrBy*(r: Redis, key: string, increment: int): RedisInteger =
   ## Increment the integer value of a key by the given number
   r.sendCommand("INCRBY", key, $increment)
   return r.readInteger()
+
+#TODO incrbyfloat
+
+proc msetk*(r: Redis, keyValues: openarray[tuple[key, value: string]]) =
+  ## Set mupltiple keys to multplie values
+  var args: seq[string] = @[]
+  for key, value in items(keyValues):
+    args.add(key)
+    args.add(value)
+  r.sendCommand("MSET", args)
+  raiseNoOK(r.readStatus(), r.pipeline.enabled)
 
 proc setk*(r: Redis, key, value: string) =
   ## Set the string value of a key.
@@ -711,7 +738,7 @@ proc zinterstore*(r: Redis, destination: string, numkeys: string,
   for i in items(keys): args.add(i)
 
   if weights.len != 0:
-    args.add("WITHSCORE")
+    args.add("WEIGHTS")
     for i in items(weights): args.add(i)
   if aggregate.len != 0:
     args.add("AGGREGATE")
@@ -722,27 +749,39 @@ proc zinterstore*(r: Redis, destination: string, numkeys: string,
   return r.readInteger()
 
 proc zrange*(r: Redis, key: string, start: string, stop: string,
-            withScores: bool): RedisList =
+            withScores: bool = false): RedisList =
   ## Return a range of members in a sorted set, by index
   if not withScores:
     r.sendCommand("ZRANGE", key, start, stop)
   else:
-    r.sendCommand("ZRANGE", "WITHSCORES", key, start, stop)
+    r.sendCommand("ZRANGE", key, start, stop, "WITHSCORES")
   return r.readArray()
 
 proc zrangebyscore*(r: Redis, key: string, min: string, max: string,
-                   withScore: bool = false, limit: bool = false,
+                   withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): RedisList =
   ## Return a range of members in a sorted set, by score
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORE")
+  if withScores: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
     args.add($limitCount)
 
   r.sendCommand("ZRANGEBYSCORE", args)
+  return r.readArray()
+
+proc zrangebylex*(r: Redis, key: string, start: string, stop: string,
+                  limit: bool = false, limitOffset: int = 0,
+                  limitCount: int = 0): RedisList =
+  ## Return a range of members in a sorted set, ordered lexicographically
+  var args = @[key, start, stop]
+  if limit:
+    args.add("LIMIT")
+    args.add($limitOffset)
+    args.add($limitCount)
+  r.sendCommand("ZRANGEBYLEX", args)
   return r.readArray()
 
 proc zrank*(r: Redis, key: string, member: string): RedisString =
@@ -768,22 +807,22 @@ proc zremrangebyscore*(r: Redis, key: string, min: string,
   return r.readInteger()
 
 proc zrevrange*(r: Redis, key: string, start: string, stop: string,
-               withScore: bool): RedisList =
+               withScores: bool = false): RedisList =
   ## Return a range of members in a sorted set, by index,
   ## with scores ordered from high to low
-  if withScore:
-    r.sendCommand("ZREVRANGE", "WITHSCORE", key, start, stop)
+  if withScores:
+    r.sendCommand("ZREVRANGE", key, start, stop, "WITHSCORES")
   else: r.sendCommand("ZREVRANGE", key, start, stop)
   return r.readArray()
 
 proc zrevrangebyscore*(r: Redis, key: string, min: string, max: string,
-                   withScore: bool = false, limit: bool = false,
+                   withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): RedisList =
   ## Return a range of members in a sorted set, by score, with
   ## scores ordered from high to low
   var args = @[key, min, max]
 
-  if withScore: args.add("WITHSCORE")
+  if withScores: args.add("WITHSCORES")
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
