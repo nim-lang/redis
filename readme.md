@@ -18,8 +18,6 @@ Or, to install globally to your Nimble cache run the following command:
 nimble install redis
 ```
 
-## [API Documentation](https://htmlpreview.github.io/?https://github.com/nim-lang/redis/blob/master/docs/redis.html)
-
 ## Usage
 
 ```nim
