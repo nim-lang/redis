@@ -1210,6 +1210,7 @@ function main() {
     </select>
   </div>
   <ul class="simple simple-toc" id="toc-list">
+<li><a class="reference" id="example_toc" href="#example">Example</a></li>
 <li>
   <a class="reference reference-toplevel" href="#6" id="56">Imports</a>
   <ul class="simple simple-toc-section">
@@ -1553,7 +1554,19 @@ function main() {
   <div id="tocRoot"></div>
   <p class="module-desc"><p>This module implements a redis client. It allows you to connect to a redis-server instance, send commands and receive replies.</p>
 <p><strong>Beware</strong>: Most (if not all) functions that return a <tt class="docutils literal"><span class="pre">RedisString</span></tt> may return <tt class="docutils literal"><span class="pre">redisNil</span></tt>, and functions which return a <tt class="docutils literal"><span class="pre">RedisList</span></tt> may return <tt class="docutils literal"><span class="pre">nil</span></tt>.</p>
-</p>
+
+<h1><a class="toc-backref" id="example" href="#example">Example</a></h1><pre class="listing"><span class="Keyword">import</span> <span class="Identifier">redis</span><span class="Punctuation">,</span> <span class="Identifier">asyncdispatch</span>
+
+<span class="Comment">## Open a connection to Redis running on localhost on the default port (6379)</span>
+<span class="Keyword">let</span> <span class="Identifier">redisClient</span> <span class="Operator">=</span> <span class="Identifier">openAsync</span><span class="Punctuation">(</span><span class="Punctuation">)</span>
+
+<span class="Comment">## Set the key `nim_redis:test` to the value `Hello, World`</span>
+<span class="Identifier">await</span> <span class="Identifier">redisClient</span><span class="Operator">.</span><span class="Identifier">setk</span><span class="Punctuation">(</span><span class="StringLit">&quot;nim_redis:test&quot;</span><span class="Punctuation">,</span> <span class="StringLit">&quot;Hello, World&quot;</span><span class="Punctuation">)</span>
+
+<span class="Comment">## Get the value of the key `nim_redis:test`</span>
+<span class="Keyword">let</span> <span class="Identifier">value</span> <span class="Operator">=</span> <span class="Identifier">await</span> <span class="Identifier">redisClient</span><span class="Operator">.</span><span class="Identifier">get</span><span class="Punctuation">(</span><span class="StringLit">&quot;nim_redis:test&quot;</span><span class="Punctuation">)</span>
+
+<span class="Identifier">assert</span><span class="Punctuation">(</span><span class="Identifier">value</span> <span class="Operator">==</span> <span class="StringLit">&quot;Hello, World&quot;</span><span class="Punctuation">)</span></pre></p>
   <div class="section" id="6">
 <h1><a class="toc-backref" href="#6">Imports</a></h1>
 <dl class="item">
@@ -1567,9 +1580,9 @@ function main() {
 <dd>
 A synchronous redis client.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L36"
+href="/tree/master/src/redis.nim#L53"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L36" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L53" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="AsyncRedis"><a name="AsyncRedis"></a><pre><span class="Identifier">AsyncRedis</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">RedisBase</span><span class="Other">[</span><span class="Identifier">asyncnet</span><span class="Other">.</span><span class="Identifier">AsyncSocket</span><span class="Other">]</span>
@@ -1577,63 +1590,63 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 An asynchronous redis client.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L39"
+href="/tree/master/src/redis.nim#L56"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L39" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L56" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisStatus"><a name="RedisStatus"></a><pre><span class="Identifier">RedisStatus</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Identifier">string</span></pre></dt>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L42"
+href="/tree/master/src/redis.nim#L59"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L42" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L59" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisInteger"><a name="RedisInteger"></a><pre><span class="Identifier">RedisInteger</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Identifier">BiggestInt</span></pre></dt>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L43"
+href="/tree/master/src/redis.nim#L60"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L43" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L60" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisString"><a name="RedisString"></a><pre><span class="Identifier">RedisString</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Identifier">string</span></pre></dt>
 <dd>
 Bulk reply
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L44"
+href="/tree/master/src/redis.nim#L61"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L44" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L61" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisList"><a name="RedisList"></a><pre><span class="Identifier">RedisList</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span></pre></dt>
 <dd>
 Multi-bulk reply
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L46"
+href="/tree/master/src/redis.nim#L63"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L46" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L63" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="ReplyError"><a name="ReplyError"></a><pre><span class="Identifier">ReplyError</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">IOError</span></pre></dt>
 <dd>
 Invalid reply from redis
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L49"
+href="/tree/master/src/redis.nim#L66"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L49" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L66" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisError"><a name="RedisError"></a><pre><span class="Identifier">RedisError</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">IOError</span></pre></dt>
 <dd>
 Error in redis
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L50"
+href="/tree/master/src/redis.nim#L67"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L50" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L67" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="RedisCursor"><a name="RedisCursor"></a><pre><span class="Identifier">RedisCursor</span><span class="Operator">*</span> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
@@ -1642,9 +1655,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L52"
+href="/tree/master/src/redis.nim#L69"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L52" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L69" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -1656,9 +1669,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L20"
+href="/tree/master/src/redis.nim#L37"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L20" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L37" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -1670,36 +1683,36 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L65"
+href="/tree/master/src/redis.nim#L82"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L65" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L82" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="$"><a name="$,RedisCursor"></a><pre><span class="Keyword">proc</span> <span class="Other">`</span><span class="Operator">$</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">cursor</span><span class="Other">:</span> <span class="Identifier">RedisCursor</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span></pre></dt>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L70"
+href="/tree/master/src/redis.nim#L87"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L70" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L87" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="open"><a name="open,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">open</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">host</span> <span class="Other">=</span> <span class="StringLit">&quot;localhost&quot;</span><span class="Other">;</span> <span class="Identifier">port</span> <span class="Other">=</span> <span class="DecNumber">6379</span><span class="Other">.</span><span class="Identifier">Port</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Redis</span></pre></dt>
 <dd>
 Open a synchronous connection to a redis server.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L73"
+href="/tree/master/src/redis.nim#L90"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L73" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L90" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="openAsync"><a name="openAsync,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">openAsync</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">host</span> <span class="Other">=</span> <span class="StringLit">&quot;localhost&quot;</span><span class="Other">;</span> <span class="Identifier">port</span> <span class="Other">=</span> <span class="DecNumber">6379</span><span class="Other">.</span><span class="Identifier">Port</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">AsyncRedis</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">async</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Open an asynchronous connection to a redis server.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L80"
+href="/tree/master/src/redis.nim#L97"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L80" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L97" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="flushPipeline"><a name="flushPipeline,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">flushPipeline</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">wasMulti</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1707,45 +1720,45 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Send buffered commands, clear buffer, return results
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L267"
+href="/tree/master/src/redis.nim#L284"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L267" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L284" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="startPipelining"><a name="startPipelining,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">startPipelining</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span></pre></dt>
 <dd>
 Enable command pipelining (reduces network roundtrips). Note that when enabled, you must call flushPipeline to actually send commands, except for multi/exec() which enable and flush the pipeline automatically. Commands return immediately with dummy values; actual results returned from flushPipeline() or exec()
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L286"
+href="/tree/master/src/redis.nim#L303"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L286" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L303" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="del"><a name="del,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">del</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Delete a key or multiple keys
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L352"
+href="/tree/master/src/redis.nim#L369"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L352" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L369" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="exists"><a name="exists,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">exists</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Determine if a key exists
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L357"
+href="/tree/master/src/redis.nim#L374"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L357" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L374" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="expire"><a name="expire,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">expire</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">seconds</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Set a key's time to live in seconds. Returns <cite>false</cite> if the key could not be found or the timeout could not be set.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L362"
+href="/tree/master/src/redis.nim#L379"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L362" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L379" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="expireAt"><a name="expireAt,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">expireAt</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">timestamp</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1753,27 +1766,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the expiration for a key as a UNIX timestamp. Returns <cite>false</cite> if the key could not be found or the timeout could not be set.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L368"
+href="/tree/master/src/redis.nim#L385"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L368" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L385" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="keys"><a name="keys,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">keys</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">pattern</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Find all keys matching the given pattern
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L374"
+href="/tree/master/src/redis.nim#L391"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L374" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L391" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="scan"><a name="scan,,RedisCursor"></a><pre><span class="Keyword">proc</span> <span class="Identifier">scan</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">cursor</span><span class="Other">:</span> <span class="Identifier">RedisCursor</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Find all keys matching the given pattern and yield it to client in portions using default Redis values for MATCH and COUNT parameters
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L379"
+href="/tree/master/src/redis.nim#L396"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L379" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L396" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="scan"><a name="scan,,RedisCursor,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">scan</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">cursor</span><span class="Other">:</span> <span class="Identifier">RedisCursor</span><span class="Other">;</span> <span class="Identifier">pattern</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1781,9 +1794,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Find all keys matching the given pattern and yield it to client in portions using cursor as a client query identifier. Using default Redis value for COUNT argument
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L387"
+href="/tree/master/src/redis.nim#L404"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L387" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L404" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="scan"><a name="scan,,RedisCursor,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">scan</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">cursor</span><span class="Other">:</span> <span class="Identifier">RedisCursor</span><span class="Other">;</span> <span class="Identifier">pattern</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">count</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -1791,36 +1804,36 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Find all keys matching the given pattern and yield it to client in portions using cursor as a client query identifier.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L395"
+href="/tree/master/src/redis.nim#L412"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L395" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L412" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="move"><a name="move,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">move</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">db</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Move a key to another database. Returns <cite>true</cite> on a successful move.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L403"
+href="/tree/master/src/redis.nim#L420"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L403" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L420" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="persist"><a name="persist,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">persist</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove the expiration from a key. Returns <cite>true</cite> when the timeout was removed.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L408"
+href="/tree/master/src/redis.nim#L425"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L408" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L425" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="randomKey"><a name="randomKey,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">randomKey</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Return a random key from the keyspace
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L414"
+href="/tree/master/src/redis.nim#L431"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L414" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L431" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="rename"><a name="rename,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">rename</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">newkey</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
@@ -1829,54 +1842,54 @@ class="link-seesrc" target="_blank">Source</a>
 <p><strong>WARNING:</strong> Overwrites <cite>newkey</cite> if it exists!</p>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L419"
+href="/tree/master/src/redis.nim#L436"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L419" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L436" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="renameNX"><a name="renameNX,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">renameNX</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">newkey</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Same as <tt class="docutils literal"><span class="pre">rename</span></tt> but doesn't continue if <cite>newkey</cite> exists. Returns <cite>true</cite> if key was renamed.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L426"
+href="/tree/master/src/redis.nim#L443"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L426" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L443" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="ttl"><a name="ttl,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">ttl</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the time to live for a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L432"
+href="/tree/master/src/redis.nim#L449"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L432" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L449" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="keyType"><a name="keyType,Redis,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">keyType</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">RedisStatus</span></pre></dt>
 <dd>
 Determine the type stored at key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L437"
+href="/tree/master/src/redis.nim#L454"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L437" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L454" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="append"><a name="append,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">append</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Append a value to a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L445"
+href="/tree/master/src/redis.nim#L462"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L445" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L462" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="decr"><a name="decr,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">decr</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Decrement the integer value of a key by one
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L450"
+href="/tree/master/src/redis.nim#L467"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L450" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L467" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="decrBy"><a name="decrBy,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">decrBy</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">decrement</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1884,27 +1897,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Decrement the integer value of a key by the given number
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L455"
+href="/tree/master/src/redis.nim#L472"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L455" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L472" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="mget"><a name="mget,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">mget</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the values of all given keys
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L460"
+href="/tree/master/src/redis.nim#L477"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L460" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L477" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="get"><a name="get,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">get</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the value of a key. Returns <cite>redisNil</cite> when <cite>key</cite> doesn't exist.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L465"
+href="/tree/master/src/redis.nim#L482"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L465" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L482" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="getBit"><a name="getBit,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">getBit</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">offset</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1912,9 +1925,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Returns the bit value at offset in the string value stored at key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L471"
+href="/tree/master/src/redis.nim#L488"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L471" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L488" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bitCount"><a name="bitCount,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bitCount</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">limits</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -1922,9 +1935,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Returns the number of set bits, optionally within limits
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L476"
+href="/tree/master/src/redis.nim#L493"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L476" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L493" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bitPos"><a name="bitPos,,string,int,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bitPos</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">bit</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">limits</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -1932,9 +1945,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Returns position of the first occurence of bit within limits
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L481"
+href="/tree/master/src/redis.nim#L498"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L481" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L498" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="getRange"><a name="getRange,,string,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">getRange</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">,</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1942,9 +1955,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Get a substring of the string stored at a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L491"
+href="/tree/master/src/redis.nim#L508"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L491" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L508" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="getSet"><a name="getSet,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">getSet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1952,18 +1965,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the string value of a key and return its old value. Returns <cite>redisNil</cite> when key doesn't exist.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L496"
+href="/tree/master/src/redis.nim#L513"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L496" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L513" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="incr"><a name="incr,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">incr</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Increment the integer value of a key by one.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L502"
+href="/tree/master/src/redis.nim#L519"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L502" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L519" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="incrBy"><a name="incrBy,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">incrBy</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">increment</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -1971,9 +1984,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Increment the integer value of a key by the given number
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L507"
+href="/tree/master/src/redis.nim#L524"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L507" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L524" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="msetk"><a name="msetk,,seq[tuple[string,string]]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">msetk</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keyValues</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Keyword">tuple</span><span class="Other">[</span><span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">]</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -1981,9 +1994,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set mupltiple keys to multplie values
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L514"
+href="/tree/master/src/redis.nim#L531"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L514" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L531" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="setk"><a name="setk,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">setk</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
@@ -1992,18 +2005,18 @@ class="link-seesrc" target="_blank">Source</a>
 <p>NOTE: This function had to be renamed due to a clash with the <cite>set</cite> type.</p>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L523"
+href="/tree/master/src/redis.nim#L540"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L523" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L540" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="setNX"><a name="setNX,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">setNX</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Set the value of a key, only if the key does not exist. Returns <cite>true</cite> if the key was set.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L530"
+href="/tree/master/src/redis.nim#L547"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L530" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L547" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="setBit"><a name="setBit,,string,int,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">setBit</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">offset</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2011,9 +2024,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Sets or clears the bit at offset in the string value stored at key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L536"
+href="/tree/master/src/redis.nim#L553"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L536" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L553" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="setEx"><a name="setEx,,string,int,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">setEx</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">seconds</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2021,9 +2034,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the value and expiration of a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L542"
+href="/tree/master/src/redis.nim#L559"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L542" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L559" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="setRange"><a name="setRange,,string,int,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">setRange</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">offset</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2031,54 +2044,54 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Overwrite part of a string at key starting at the specified offset
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L547"
+href="/tree/master/src/redis.nim#L564"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L547" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L564" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="strlen"><a name="strlen,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">strlen</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the length of the value stored in a key. Returns 0 when key doesn't exist.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L553"
+href="/tree/master/src/redis.nim#L570"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L553" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L570" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hDel"><a name="hDel,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hDel</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Delete a hash field at <cite>key</cite>. Returns <cite>true</cite> if the field was removed.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L560"
+href="/tree/master/src/redis.nim#L577"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L560" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L577" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hExists"><a name="hExists,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hExists</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">bool</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Determine if a hash field exists.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L565"
+href="/tree/master/src/redis.nim#L582"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L565" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L582" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hGet"><a name="hGet,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hGet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the value of a hash field
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L570"
+href="/tree/master/src/redis.nim#L587"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L570" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L587" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hGetAll"><a name="hGetAll,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hGetAll</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get all the fields and values in a hash
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L575"
+href="/tree/master/src/redis.nim#L592"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L575" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L592" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hIncrBy"><a name="hIncrBy,,string,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hIncrBy</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">incr</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2086,27 +2099,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Increment the integer value of a hash field by the given number
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L580"
+href="/tree/master/src/redis.nim#L597"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L580" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L597" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hKeys"><a name="hKeys,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hKeys</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get all the fields in a hash
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L585"
+href="/tree/master/src/redis.nim#L602"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L585" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L602" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hLen"><a name="hLen,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hLen</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the number of fields in a hash
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L590"
+href="/tree/master/src/redis.nim#L607"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L590" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L607" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hMGet"><a name="hMGet,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hMGet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">fields</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2114,9 +2127,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Get the values of all the given hash fields
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L595"
+href="/tree/master/src/redis.nim#L612"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L595" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L612" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hMSet"><a name="hMSet,,string,seq[tuple[string,string]]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hMSet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2124,9 +2137,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set multiple hash fields to multiple values
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L600"
+href="/tree/master/src/redis.nim#L617"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L600" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L617" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hSet"><a name="hSet,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hSet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2134,9 +2147,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the string value of a hash field
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L610"
+href="/tree/master/src/redis.nim#L627"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L610" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L627" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hSetNX"><a name="hSetNX,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hSetNX</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">field</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2144,18 +2157,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the value of a hash field, only if the field does <strong>not</strong> exist
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L615"
+href="/tree/master/src/redis.nim#L632"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L615" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L632" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hVals"><a name="hVals,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hVals</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get all the values in a hash
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L620"
+href="/tree/master/src/redis.nim#L637"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L620" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L637" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bLPop"><a name="bLPop,,seq[string],int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bLPop</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">timeout</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2163,9 +2176,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove and get the <em>first</em> element in a list, or block until one is available
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L627"
+href="/tree/master/src/redis.nim#L644"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L627" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L644" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bRPop"><a name="bRPop,,seq[string],int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bRPop</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">timeout</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2173,9 +2186,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove and get the <em>last</em> element in a list, or block until one is available.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L640"
+href="/tree/master/src/redis.nim#L657"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L640" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L657" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bRPopLPush"><a name="bRPopLPush,,string,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bRPopLPush</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">source</span><span class="Other">,</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">timeout</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2185,9 +2198,9 @@ class="link-seesrc" target="_blank">Source</a>
 <p><a class="reference external" href="http://redis.io/commands/brpoplpush">http://redis.io/commands/brpoplpush</a></p>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L653"
+href="/tree/master/src/redis.nim#L670"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L653" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L670" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lIndex"><a name="lIndex,,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lIndex</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2195,9 +2208,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Get an element from a list by its index
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L662"
+href="/tree/master/src/redis.nim#L679"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L662" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L679" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lInsert"><a name="lInsert,,string,bool,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lInsert</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">before</span><span class="Other">:</span> <span class="Identifier">bool</span><span class="Other">;</span> <span class="Identifier">pivot</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2205,27 +2218,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Insert an element before or after another element in a list
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L667"
+href="/tree/master/src/redis.nim#L684"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L667" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L684" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lLen"><a name="lLen,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lLen</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the length of a list
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L674"
+href="/tree/master/src/redis.nim#L691"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L674" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L691" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lPop"><a name="lPop,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lPop</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove and get the first element in a list
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L679"
+href="/tree/master/src/redis.nim#L696"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L679" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L696" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lPush"><a name="lPush,,string,string,bool"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lPush</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">create</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">true</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2233,9 +2246,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Prepend a value to a list. Returns the length of the list after the push. The <tt class="docutils literal"><span class="pre">create</span></tt> param specifies whether a list should be created if it doesn't exist at <tt class="docutils literal"><span class="pre">key</span></tt>. More specifically if <tt class="docutils literal"><span class="pre">create</span></tt> is true, <cite>LPUSH</cite> will be used, otherwise <cite>LPUSHX</cite>.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L684"
+href="/tree/master/src/redis.nim#L701"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L684" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L701" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lRange"><a name="lRange,,string,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lRange</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">,</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2243,9 +2256,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Get a range of elements from a list. Returns <cite>nil</cite> when <cite>key</cite> doesn't exist.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L696"
+href="/tree/master/src/redis.nim#L713"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L696" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L713" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lRem"><a name="lRem,,string,string,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lRem</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">count</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2253,9 +2266,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove elements from a list. Returns the number of elements that have been removed.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L702"
+href="/tree/master/src/redis.nim#L719"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L702" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L719" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lSet"><a name="lSet,,string,int,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lSet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2263,27 +2276,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set the value of an element in a list by its index
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L708"
+href="/tree/master/src/redis.nim#L725"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L708" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L725" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lTrim"><a name="lTrim,,string,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lTrim</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">,</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Trim a list to the specified range
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L713"
+href="/tree/master/src/redis.nim#L730"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L713" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L730" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="rPop"><a name="rPop,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">rPop</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove and get the last element in a list
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L718"
+href="/tree/master/src/redis.nim#L735"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L718" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L735" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="rPopLPush"><a name="rPopLPush,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">rPopLPush</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">source</span><span class="Other">,</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2291,9 +2304,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove the last element in a list, append it to another list and return it
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L723"
+href="/tree/master/src/redis.nim#L740"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L723" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L740" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="rPush"><a name="rPush,,string,string,bool"></a><pre><span class="Keyword">proc</span> <span class="Identifier">rPush</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">create</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">true</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2301,9 +2314,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Append a value to a list. Returns the length of the list after the push. The <tt class="docutils literal"><span class="pre">create</span></tt> param specifies whether a list should be created if it doesn't exist at <tt class="docutils literal"><span class="pre">key</span></tt>. More specifically if <tt class="docutils literal"><span class="pre">create</span></tt> is true, <cite>RPUSH</cite> will be used, otherwise <cite>RPUSHX</cite>.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L728"
+href="/tree/master/src/redis.nim#L745"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L728" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L745" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sadd"><a name="sadd,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sadd</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2311,27 +2324,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Add a member to a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L742"
+href="/tree/master/src/redis.nim#L759"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L742" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L759" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="scard"><a name="scard,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">scard</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the number of members in a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L747"
+href="/tree/master/src/redis.nim#L764"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L747" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L764" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sdiff"><a name="sdiff,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sdiff</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Subtract multiple sets
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L752"
+href="/tree/master/src/redis.nim#L769"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L752" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L769" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sdiffstore"><a name="sdiffstore,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sdiffstore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2339,18 +2352,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Subtract multiple sets and store the resulting set in a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L757"
+href="/tree/master/src/redis.nim#L774"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L757" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L774" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sinter"><a name="sinter,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sinter</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Intersect multiple sets
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L763"
+href="/tree/master/src/redis.nim#L780"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L763" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L780" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sinterstore"><a name="sinterstore,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sinterstore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2358,9 +2371,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Intersect multiple sets and store the resulting set in a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L768"
+href="/tree/master/src/redis.nim#L785"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L768" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L785" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sismember"><a name="sismember,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sismember</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2368,18 +2381,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Determine if a given value is a member of a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L774"
+href="/tree/master/src/redis.nim#L791"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L774" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L791" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="smembers"><a name="smembers,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">smembers</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get all the members in a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L779"
+href="/tree/master/src/redis.nim#L796"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L779" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L796" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="smove"><a name="smove,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">smove</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">source</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2387,27 +2400,27 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Move a member from one set to another
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L784"
+href="/tree/master/src/redis.nim#L801"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L784" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L801" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="spop"><a name="spop,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">spop</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove and return a random member from a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L790"
+href="/tree/master/src/redis.nim#L807"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L790" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L807" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="srandmember"><a name="srandmember,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">srandmember</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get a random member from a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L795"
+href="/tree/master/src/redis.nim#L812"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L795" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L812" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="srem"><a name="srem,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">srem</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2415,18 +2428,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove a member from a set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L800"
+href="/tree/master/src/redis.nim#L817"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L800" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L817" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sunion"><a name="sunion,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sunion</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">keys</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Add multiple sets
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L805"
+href="/tree/master/src/redis.nim#L822"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L805" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L822" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="sunionstore"><a name="sunionstore,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">sunionstore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2434,9 +2447,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Add multiple sets and store the resulting set in a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L810"
+href="/tree/master/src/redis.nim#L827"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L810" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L827" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zadd"><a name="zadd,,string,int,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zadd</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">score</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2444,18 +2457,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Add a member to a sorted set, or update its score if it already exists
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L818"
+href="/tree/master/src/redis.nim#L835"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L818" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L835" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zcard"><a name="zcard,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zcard</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the number of members in a sorted set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L823"
+href="/tree/master/src/redis.nim#L840"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L823" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L840" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zcount"><a name="zcount,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zcount</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">min</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">max</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2463,9 +2476,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Count the members in a sorted set with scores within the given values
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L828"
+href="/tree/master/src/redis.nim#L845"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L828" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L845" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zincrby"><a name="zincrby,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zincrby</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">increment</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2473,9 +2486,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Increment the score of a member in a sorted set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L833"
+href="/tree/master/src/redis.nim#L850"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L833" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L850" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zinterstore"><a name="zinterstore,,string,string,seq[string],seq[string],string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zinterstore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">numkeys</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2484,9 +2497,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Intersect multiple sorted sets and store the resulting sorted set in a new key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L839"
+href="/tree/master/src/redis.nim#L856"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L839" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L856" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrange"><a name="zrange,,string,string,string,bool"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrange</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2494,9 +2507,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Return a range of members in a sorted set, by index
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L867"
+href="/tree/master/src/redis.nim#L884"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L867" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L884" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrangebyscore"><a name="zrangebyscore,,string,string,string,bool,bool,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrangebyscore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">min</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">max</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2505,9 +2518,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Return a range of members in a sorted set, by score
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L877"
+href="/tree/master/src/redis.nim#L894"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L877" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L894" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrangebylex"><a name="zrangebylex,,string,string,string,bool,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrangebylex</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2516,9 +2529,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Return a range of members in a sorted set, ordered lexicographically
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L896"
+href="/tree/master/src/redis.nim#L913"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L896" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L913" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrank"><a name="zrank,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrank</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2526,9 +2539,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Determine the index of a member in a sorted set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L913"
+href="/tree/master/src/redis.nim#L930"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L913" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L930" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrem"><a name="zrem,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrem</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2536,9 +2549,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove a member from a sorted set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L918"
+href="/tree/master/src/redis.nim#L935"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L918" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L935" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zremrangebyrank"><a name="zremrangebyrank,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zremrangebyrank</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2546,9 +2559,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove all members in a sorted set within the given indexes
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L923"
+href="/tree/master/src/redis.nim#L940"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L923" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L940" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zremrangebyscore"><a name="zremrangebyscore,,string,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zremrangebyscore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">min</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">max</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2556,9 +2569,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Remove all members in a sorted set within the given scores
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L929"
+href="/tree/master/src/redis.nim#L946"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L929" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L946" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrevrange"><a name="zrevrange,,string,string,string,bool"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrevrange</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">start</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">stop</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2566,9 +2579,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Return a range of members in a sorted set, by index, with scores ordered from high to low
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L935"
+href="/tree/master/src/redis.nim#L952"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L935" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L952" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrevrangebyscore"><a name="zrevrangebyscore,,string,string,string,bool,bool,int,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrevrangebyscore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">min</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">max</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2578,9 +2591,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Return a range of members in a sorted set, by score, with scores ordered from high to low
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L946"
+href="/tree/master/src/redis.nim#L963"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L946" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L963" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zrevrank"><a name="zrevrank,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zrevrank</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2588,9 +2601,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Determine the index of a member in a sorted set, with scores ordered from high to low
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L966"
+href="/tree/master/src/redis.nim#L983"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L966" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L983" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zscore"><a name="zscore,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zscore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">member</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2598,9 +2611,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Get the score associated with the given member in a sorted set
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L972"
+href="/tree/master/src/redis.nim#L989"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L972" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L989" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="zunionstore"><a name="zunionstore,,string,string,seq[string],seq[string],string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">zunionstore</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">numkeys</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -2609,9 +2622,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Add multiple sorted sets and store the resulting sorted set in a new key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L977"
+href="/tree/master/src/redis.nim#L994"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L977" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L994" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="pfadd"><a name="pfadd,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">pfadd</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">elements</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2619,18 +2632,18 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Add variable number of elements into special 'HyperLogLog' set type
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1003"
+href="/tree/master/src/redis.nim#L1020"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1003" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1020" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="pfcount"><a name="pfcount,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">pfcount</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Count approximate number of elements in 'HyperLogLog'
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1008"
+href="/tree/master/src/redis.nim#L1025"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1008" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1025" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="pfmerge"><a name="pfmerge,,string,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">pfmerge</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">destination</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sources</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span>
@@ -2638,126 +2651,126 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Merge several source HyperLogLog's into one specified by destKey
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1013"
+href="/tree/master/src/redis.nim#L1030"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1013" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1030" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="discardMulti"><a name="discardMulti,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">discardMulti</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Discard all commands issued after MULTI
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1051"
+href="/tree/master/src/redis.nim#L1068"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1051" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1068" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="exec"><a name="exec,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">exec</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Execute all commands issued after MULTI
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1056"
+href="/tree/master/src/redis.nim#L1073"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1056" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1073" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="multi"><a name="multi,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">multi</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Mark the start of a transaction block
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1064"
+href="/tree/master/src/redis.nim#L1081"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1064" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1081" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="unwatch"><a name="unwatch,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">unwatch</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Forget about all watched keys
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1070"
+href="/tree/master/src/redis.nim#L1087"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1070" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1087" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="watch"><a name="watch,,seq[string]"></a><pre><span class="Keyword">proc</span> <span class="Identifier">watch</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Watch the given keys to determine execution of the MULTI/EXEC block
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1075"
+href="/tree/master/src/redis.nim#L1092"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1075" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1092" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="auth"><a name="auth,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">auth</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">password</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Authenticate to the server
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1082"
+href="/tree/master/src/redis.nim#L1099"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1082" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1099" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="echoServ"><a name="echoServ,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">echoServ</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">message</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Echo the given string
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1087"
+href="/tree/master/src/redis.nim#L1104"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1087" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1104" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="ping"><a name="ping,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">ping</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Ping the server
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1092"
+href="/tree/master/src/redis.nim#L1109"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1092" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1109" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="quit"><a name="quit,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">quit</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Close the connection
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1097"
+href="/tree/master/src/redis.nim#L1114"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1097" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1114" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="select"><a name="select,,int"></a><pre><span class="Keyword">proc</span> <span class="Identifier">select</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">int</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Change the selected database for the current connection
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1103"
+href="/tree/master/src/redis.nim#L1120"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1103" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1120" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bgrewriteaof"><a name="bgrewriteaof,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bgrewriteaof</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Asynchronously rewrite the append-only file
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1110"
+href="/tree/master/src/redis.nim#L1127"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1110" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1127" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="bgsave"><a name="bgsave,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">bgsave</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Asynchronously save the dataset to disk
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1115"
+href="/tree/master/src/redis.nim#L1132"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1115" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1132" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="configGet"><a name="configGet,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">configGet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">parameter</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisList</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the value of a configuration parameter
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1120"
+href="/tree/master/src/redis.nim#L1137"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1120" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1137" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="configSet"><a name="configSet,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">configSet</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">parameter</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma">
@@ -2765,117 +2778,117 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Set a configuration parameter to the given value
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1125"
+href="/tree/master/src/redis.nim#L1142"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1125" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1142" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="configResetStat"><a name="configResetStat,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">configResetStat</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Reset the stats returned by INFO
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1130"
+href="/tree/master/src/redis.nim#L1147"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1130" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1147" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="dbsize"><a name="dbsize,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">dbsize</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Return the number of keys in the selected database
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1135"
+href="/tree/master/src/redis.nim#L1152"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1135" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1152" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="debugObject"><a name="debugObject,,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">debugObject</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get debugging information about a key
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1140"
+href="/tree/master/src/redis.nim#L1157"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1140" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1157" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="debugSegfault"><a name="debugSegfault,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">debugSegfault</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Make the server crash
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1145"
+href="/tree/master/src/redis.nim#L1162"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1145" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1162" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="flushall"><a name="flushall,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">flushall</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove all keys from all databases
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1149"
+href="/tree/master/src/redis.nim#L1166"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1149" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1166" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="flushdb"><a name="flushdb,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">flushdb</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisStatus</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Remove all keys from the current database
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1154"
+href="/tree/master/src/redis.nim#L1171"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1154" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1171" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="info"><a name="info,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">info</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisString</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get information and statistics about the server
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1159"
+href="/tree/master/src/redis.nim#L1176"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1159" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1176" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="lastsave"><a name="lastsave,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">lastsave</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">RedisInteger</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Get the UNIX time stamp of the last successful save to disk
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1164"
+href="/tree/master/src/redis.nim#L1181"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1164" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1181" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="save"><a name="save,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">save</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Synchronously save the dataset to disk
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1176"
+href="/tree/master/src/redis.nim#L1193"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1176" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1193" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="shutdown"><a name="shutdown,"></a><pre><span class="Keyword">proc</span> <span class="Identifier">shutdown</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Synchronously save the dataset to disk and then shut down the server
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1181"
+href="/tree/master/src/redis.nim#L1198"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1181" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1198" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="slaveof"><a name="slaveof,,string,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">slaveof</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">Redis</span> <span class="Operator">|</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">host</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">port</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">void</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">multisync</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 Make the server a slave of another instance, or promote it as master
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1195"
+href="/tree/master/src/redis.nim#L1212"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1195" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1212" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <dt id="hPairs"><a name="hPairs,AsyncRedis,string"></a><pre><span class="Keyword">proc</span> <span class="Identifier">hPairs</span><span class="Operator">*</span><span class="Other">(</span><span class="Identifier">r</span><span class="Other">:</span> <span class="Identifier">AsyncRedis</span><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Future</span><span class="Other">[</span><span class="Identifier">seq</span><span class="Other">[</span><span class="Keyword">tuple</span><span class="Other">[</span><span class="Identifier">key</span><span class="Other">,</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">]</span><span class="Other">]</span><span class="Other">]</span> <span class="Other pragmabegin">{.</span><div class="pragma"><span class="Identifier">async</span></div><span class="Other pragmaend">.}</span></pre></dt>
 <dd>
 
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1212"
+href="/tree/master/src/redis.nim#L1229"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1212" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1229" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -2887,9 +2900,9 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 Iterator for keys and values in a hash.
 &nbsp;&nbsp;<a
-href="/tree/master/src/redis.nim#L1200"
+href="/tree/master/src/redis.nim#L1217"
 class="link-seesrc" target="_blank">Source</a>
-<a href="/edit/devel/src/redis.nim#L1200" class="link-seesrc" target="_blank" >Edit</a>
+<a href="/edit/devel/src/redis.nim#L1217" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -2902,7 +2915,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small>Made with Nim. Generated: 2017-07-03 12:43:55 UTC</small>
+        <small>Made with Nim. Generated: 2017-07-03 13:06:52 UTC</small>
       </div>
     </div>
   </div>
