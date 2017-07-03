@@ -22,13 +22,13 @@
 ##
 ##    ## Open a connection to Redis running on localhost on the default port (6379)
 ##    let redisClient = openAsync()
-##    
+##
 ##    ## Set the key `nim_redis:test` to the value `Hello, World`
 ##    await redisClient.setk("nim_redis:test", "Hello, World")
-##    
+##
 ##    ## Get the value of the key `nim_redis:test`
 ##    let value = await redisClient.get("nim_redis:test")
-##    
+##
 ##    assert(value == "Hello, World")
 
 import net, asyncdispatch, asyncnet, os, strutils, parseutils
@@ -89,15 +89,17 @@ proc `$`*(cursor: RedisCursor): string =
 
 proc open*(host = "localhost", port = 6379.Port): Redis =
   ## Open a synchronous connection to a redis server.
-  result.socket = newSocket(buffered = false)
+  result = Redis(
+    socket: newSocket(buffered = true),
+    pipeline: newPipeline()
+  )
 
   result.socket.connect(host, port)
-  result.pipeline = newPipeline()
 
 proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.async.} =
   ## Open an asynchronous connection to a redis server.
   result = AsyncRedis(
-    socket: newAsyncSocket(buffered = false),
+    socket: newAsyncSocket(buffered = true),
     pipeline: newPipeline()
   )
 
@@ -241,7 +243,7 @@ proc readArrayLines(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.readSocket()
   if line == nil:
     return nil
-    
+
   result = await r.parseArrayLines(line)
 
 proc parseBulkString(r: Redis | AsyncRedis, allowMBNil = false, line:string = ""): Future[RedisString] {.multisync.} =
@@ -648,7 +650,7 @@ proc bLPop*(r: Redis | AsyncRedis, keys: seq[string], timeout: int): Future[Redi
   newSeq(args, len(keys) + 1)
   for i in items(keys):
     args.add(i)
-    
+
   args.add($timeout)
 
   await r.sendCommand("BLPOP", args)
