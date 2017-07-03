@@ -1279,7 +1279,7 @@ proc assertListsIdentical(listA, listB: seq[string]) =
 when defined(testing) and not defined(testasync) and isMainModule:
   echo "Testing sync redis client"
 
-  var r = open()
+  let r = open()
 
   # Test with no pipelining
   var listNormal = r.someTests(normal)
@@ -1299,7 +1299,15 @@ elif defined(testing) and defined(testasync) and isMainModule:
   proc mainAsync(): Future[void] {.async.} =
     echo "Testing async redis client"
 
-    var r = await openAsync()
+    let r = await openAsync()
+
+    ## Set the key `nim_redis:test` to the value `Hello, World`
+    await r.setk("nim_redis:test", "Hello, World")
+
+    ## Get the value of the key `nim_redis:test`
+    let value = await r.get("nim_redis:test")
+
+    assert(value == "Hello, World")
 
     # Test with no pipelining
     var listNormal = await r.someTests(normal)
