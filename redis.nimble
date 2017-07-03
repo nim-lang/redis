@@ -1,9 +1,15 @@
-[Package]
-name          = "redis"
-version       = "0.1.0"
+# Package
+
+version       = "0.2.0"
 author        = "Dominik Picheta"
 description   = "Official redis client for Nim"
 license       = "MIT"
 
-[Deps]
-Requires: "nim >= 0.11.0"
+srcDir = "src"
+
+# Dependencies
+
+requires "nim >= 0.11.0"
+
+task docs, "Build documentation":
+    exec "nim doc --index:on -o:docs/redis.html src/redis.nim"
