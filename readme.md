@@ -1,4 +1,4 @@
-# redis
+# redis [![CircleCI](https://circleci.com/gh/nim-lang/redis.svg?style=svg)](https://circleci.com/gh/nim-lang/redis)
 
 A redis client for Nim.
 
