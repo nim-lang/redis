@@ -1,0 +1,28 @@
+version: 2
+jobs:
+  build:
+    working_directory: /usr/src/redis
+    docker:
+      - image: nimlang/nim
+      - image: redis:3
+    steps:
+      - checkout
+      - run:
+          name: test
+          command: nim c -r tests/main.nim
+  build_alpine:
+    working_directory: /usr/src/redis
+    docker:
+      - image: nimlang/nim:alpine
+      - image: redis:3
+    steps:
+      - checkout
+      - run:
+          name: test
+          command: nim c -r tests/main.nim
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - build_alpine
