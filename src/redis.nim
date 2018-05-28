@@ -275,7 +275,7 @@ proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   var res = case line[0]
     of '+', '-': @[r.parseStatus(line)]
     of ':': @[$(r.parseInteger(line))]
-    of '$': @[await r.parseBulkString(true,line)]
+    of '$': (let x = await r.parseBulkString(true,line); @[x])
     of '*': await r.parseArrayLines(line)
     else:
       raise newException(ReplyError, "readNext failed on line: " & line)
@@ -530,7 +530,10 @@ proc incrBy*(r: Redis | AsyncRedis, key: string, increment: int): Future[RedisIn
 
 #TODO incrbyfloat
 
-proc msetk*(r: Redis | AsyncRedis, keyValues: seq[tuple[key, value: string]]): Future[void] {.multisync.} =
+proc msetk*(
+  r: Redis | AsyncRedis,
+  keyValues: seq[tuple[key, value: string]]
+): Future[void] {.multisync.} =
   ## Set mupltiple keys to multplie values
   var args: seq[string] = @[]
   for key, value in items(keyValues):
