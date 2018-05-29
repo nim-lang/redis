@@ -31,7 +31,7 @@
 ##
 ##    assert(value == "Hello, World")
 
-import net, asyncdispatch, asyncnet, os, strutils, parseutils
+import net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
 
 const
   redisNil* = "\0\0"
@@ -42,19 +42,18 @@ type
     buffer: string
     expected: int ## number of replies expected if pipelined
 
-  SendMode = enum
-    normal, pipelined, multiple
-
-  RedisBase[TSocket] = object of RootObj
+  RedisBase[TSocket] = ref object of RootObj
     socket: TSocket
     connected: bool
     pipeline: Pipeline
 
-  Redis* = object of RedisBase[net.Socket]
+  Redis* = ref object of RedisBase[net.Socket]
     ## A synchronous redis client.
 
-  AsyncRedis* = object of RedisBase[asyncnet.AsyncSocket]
+  AsyncRedis* = ref object of RedisBase[asyncnet.AsyncSocket]
     ## An asynchronous redis client.
+    currentCommand: Option[string]
+    sendQueue: Deque[Future[void]]
 
   RedisStatus* = string
   RedisInteger* = BiggestInt
@@ -64,14 +63,10 @@ type
     ## Multi-bulk reply
 
   ReplyError* = object of IOError ## Invalid reply from redis
-  RedisError* = object of IOError        ## Error in redis
+  RedisError* = object of IOError ## Error in redis
 
   RedisCursor* = ref object
     position*: BiggestInt
-
-{.deprecated: [TSendMode: SendMode, TRedis: Redis, TRedisStatus: RedisStatus,
-     TRedisInteger: RedisInteger, TRedisString: RedisString,
-     TRedisList: RedisList, EInvalidReply: ReplyError, ERedis: RedisError].}
 
 proc newPipeline(): Pipeline =
   new(result)
@@ -100,23 +95,58 @@ proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.asyn
   ## Open an asynchronous connection to a redis server.
   result = AsyncRedis(
     socket: newAsyncSocket(buffered = true),
-    pipeline: newPipeline()
+    pipeline: newPipeline(),
+    sendQueue: initDeque[Future[void]]()
   )
 
   await result.socket.connect(host, port)
 
-proc raiseInvalidReply(expected, got: char) =
-  raise newException(ReplyError,
-          "Expected '$1' at the beginning of a status reply got '$2'" %
-          [$expected, $got])
+proc finaliseCommand(r: Redis | AsyncRedis) =
+  when r is AsyncRedis:
+    r.currentCommand = none[string]()
+    if r.sendQueue.len > 0:
+      let fut = r.sendQueue.popFirst()
+      fut.complete()
 
-proc raiseNoOK(status: string, pipelineEnabled: bool) =
-  if pipelineEnabled and not (status == "QUEUED" or status == "PIPELINED"):
-    raise newException(ReplyError, "Expected \"QUEUED\" or \"PIPELINED\" got \"$1\"" % status)
-  elif not pipelineEnabled and status != "OK":
-    raise newException(ReplyError, "Expected \"OK\" got \"$1\"" % status)
+proc raiseReplyError(r: Redis | AsyncRedis, msg: string) =
+  finaliseCommand(r)
+  raise newException(ReplyError, msg)
 
-proc readSocket(r: Redis | AsyncRedis): Future[string] {.multisync.} =
+proc raiseRedisError(r: Redis | AsyncRedis, msg: string) =
+  finaliseCommand(r)
+  raise newException(RedisError, msg)
+
+proc managedSend(
+  r: Redis | AsyncRedis, data: string
+): Future[void] {.multisync.} =
+  when r is Redis:
+    r.socket.send(data)
+  else:
+    proc doSend(fut: Future[void]) =
+      r.currentCommand = some(data)
+      asyncCheck r.socket.send(data)
+    if r.currentCommand.isSome():
+      # Queue this send.
+      let sendFut = newFuture[void]("redis.managedSend")
+      sendFut.callback = doSend
+      r.sendQueue.addLast(sendFut)
+    else:
+      doSend(nil)
+
+proc managedRecv(
+  r: Redis | AsyncRedis, size: int
+): Future[string] {.multisync.} =
+  result = newString(size)
+
+  when r is Redis:
+    if r.socket.recv(result, size) != size:
+      raiseReplyError(r, "recv failed")
+  else:
+    let numReceived = await r.socket.recvInto(addr result[0], size)
+    if numReceived != size:
+      raiseReplyError(r, "recv failed")
+
+proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if r.pipeline.enabled:
     result = nil
   else:
@@ -126,27 +156,40 @@ proc readSocket(r: Redis | AsyncRedis): Future[string] {.multisync.} =
     else:
       result = await recvLine(r.socket)
 
+proc raiseInvalidReply(r: Redis | AsyncRedis, expected, got: char) =
+  raiseReplyError(r,
+          "Expected '$1' at the beginning of a status reply got '$2'" %
+          [$expected, $got])
+
+proc raiseNoOK(r: Redis | AsyncRedis, status: string) =
+  let pipelined = r.pipeline.enabled
+  if pipelined and not (status == "QUEUED" or status == "PIPELINED"):
+    raiseReplyError(r, "Expected \"QUEUED\" or \"PIPELINED\" got \"$1\"" % status)
+  elif not pipelined and status != "OK":
+    raiseReplyError(r, "Expected \"OK\" got \"$1\"" % status)
+
 proc parseStatus(r: Redis | AsyncRedis, line: string = ""): RedisStatus =
   if r.pipeline.enabled:
     return "PIPELINED"
 
   if line == "":
-    raise newException(RedisError, "Server closed connection prematurely")
+    raiseRedisError(r, "Server closed connection prematurely")
 
   if line[0] == '-':
-    raise newException(RedisError, strip(line))
+    raiseRedisError(r, strip(line))
   if line[0] != '+':
-    raiseInvalidReply('+', line[0])
+    raiseInvalidReply(r, '+', line[0])
 
   result = line.substr(1) # Strip '+'
 
 proc readStatus(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
 
   if line == nil:
     return "PIPELINED"
 
   result = r.parseStatus(line)
+  finaliseCommand(r)
 
 proc parseInteger(r: Redis | AsyncRedis, line: string = ""): RedisInteger =
   if r.pipeline.enabled:
@@ -156,72 +199,65 @@ proc parseInteger(r: Redis | AsyncRedis, line: string = ""): RedisInteger =
   #  return -1
 
   if line == "":
-    raise newException(RedisError, "Server closed connection prematurely")
+    raiseRedisError(r, "Server closed connection prematurely")
 
   if line[0] == '-':
-    raise newException(RedisError, strip(line))
+    raiseRedisError(r, strip(line))
   if line[0] != ':':
-    raiseInvalidReply(':', line[0])
+    raiseInvalidReply(r, ':', line[0])
 
   # Strip ':'
   if parseBiggestInt(line, result, 1) == 0:
-    raise newException(ReplyError, "Unable to parse integer.")
+    raiseReplyError(r, "Unable to parse integer.")
 
 proc readInteger(r: Redis | AsyncRedis): Future[RedisInteger] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
   if line == nil:
     return -1
 
   result = r.parseInteger(line)
+  finaliseCommand(r)
 
-proc recvFull(sock: Socket | AsyncSocket, size: int): Future[string] {.multisync.} =
-  result = newString(size)
-
-  when sock is Socket:
-    if sock.recv(result, size) != size:
-      raise newException(ReplyError, "recv failed")
-  else:
-    let numReceived = await sock.recvInto(addr result[0], size)
-    if numReceived != size:
-      raise newException(ReplyError, "recv failed")
-
-proc parseSingleString(r: Redis | AsyncRedis, line: string, allowMBNil = false): Future[RedisString] {.multisync.} =
+proc readSingleString(
+  r: Redis | AsyncRedis, line: string, allowMBNil: bool
+): Future[Option[RedisString]] {.multisync.} =
   if r.pipeline.enabled:
-    return ""
+    return
 
   # Error.
   if line[0] == '-':
-    raise newException(RedisError, strip(line))
+    raiseRedisError(r, strip(line))
 
   # Some commands return a /bulk/ value or a /multi-bulk/ nil. Odd.
   if allowMBNil:
     if line == "*-1":
-       return redisNil
+       return
 
   if line[0] != '$':
-    raiseInvalidReply('$', line[0])
+    raiseInvalidReply(r, '$', line[0])
 
   var numBytes = parseInt(line.substr(1))
   if numBytes == -1:
-    return redisNil
+    return
 
-  var s = await r.socket.recvFull(numBytes + 2)
-  result = strip(s)
+  var s = await r.managedRecv(numBytes + 2)
+  result = some(strip(s))
 
 proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
-  let line = await r.readSocket()
+  # TODO: Rename these style of procedures to `processSingleString`?
+  let line = await r.managedRecvLine()
   if line == nil:
     return ""
 
-  result = await r.parseSingleString(line)
+  let res = await r.readSingleString(line, allowMBNil = false)
+  result = res.get(redisNil)
+  finaliseCommand(r)
 
 proc readNext(r: Redis): RedisList
-
 proc readNext(r: AsyncRedis): Future[RedisList]
-
-proc parseArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList] {.multisync.} =
+proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList] {.multisync.} =
   if countLine[0] != '*':
-    raiseInvalidReply('*', countLine[0])
+    raiseInvalidReply(r, '*', countLine[0])
 
   var numElems = parseInt(countLine.substr(1))
   if numElems == -1:
@@ -240,34 +276,31 @@ proc parseArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList
         result.add(item)
 
 proc readArrayLines(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
   if line == nil:
     return nil
 
-  result = await r.parseArrayLines(line)
-
-proc parseBulkString(r: Redis | AsyncRedis, allowMBNil = false, line:string = ""): Future[RedisString] {.multisync.} =
-  if r.pipeline.enabled:
-    return ""
-
-  result = await r.parseSingleString(line, allowMBNil)
+  result = await r.readArrayLines(line)
 
 proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisString] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
   if line == nil:
     return ""
 
-  result = await r.parseBulkString(allowMBNil, line)
+  let res = await r.readSingleString(line, allowMBNil)
+  result = res.get(redisNil)
+  finaliseCommand(r)
 
 proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
   if line == nil:
     return @[]
 
-  result = await r.parseArrayLines(line)
+  result = await r.readArrayLines(line)
+  finaliseCommand(r)
 
 proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
-  let line = await r.readSocket()
+  let line = await r.managedRecvLine()
 
   if line == nil:
     return @[]
@@ -275,11 +308,12 @@ proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   var res = case line[0]
     of '+', '-': @[r.parseStatus(line)]
     of ':': @[$(r.parseInteger(line))]
-    of '$': (let x = await r.parseBulkString(true,line); @[x])
-    of '*': await r.parseArrayLines(line)
+    of '$': (let x = await r.readSingleString(line, true); @[x.get(redisNil)])
+    of '*': await r.readArrayLines(line)
     else:
-      raise newException(ReplyError, "readNext failed on line: " & line)
+      raiseReplyError(r, "readNext failed on line: " & line)
       nil
+
   r.pipeline.expected -= 1
   return res
 
@@ -320,9 +354,11 @@ proc sendCommand(r: Redis | AsyncRedis, cmd: string): Future[void] {.multisync.}
     r.pipeline.buffer.add(request)
     r.pipeline.expected += 1
   else:
-    await r.socket.send(request)
+    await r.managedSend(request)
 
-proc sendCommand(r: Redis | AsyncRedis, cmd: string, args: seq[string]): Future[void] {.multisync.} =
+proc sendCommand(
+  r: Redis | AsyncRedis, cmd: string, args: seq[string]
+): Future[void] {.multisync.} =
   var request = "*" & $(1 + args.len()) & "\c\L"
   request.add("$" & $cmd.len() & "\c\L")
   request.add(cmd & "\c\L")
@@ -334,9 +370,11 @@ proc sendCommand(r: Redis | AsyncRedis, cmd: string, args: seq[string]): Future[
     r.pipeline.buffer.add(request)
     r.pipeline.expected += 1
   else:
-    await r.socket.send(request)
+    await r.managedSend(request)
 
-proc sendCommand(r: Redis | AsyncRedis, cmd: string, arg1: string): Future[void] {.multisync.} =
+proc sendCommand(
+  r: Redis | AsyncRedis, cmd: string, arg1: string
+): Future[void] {.multisync.} =
   var request = "*2\c\L"
   request.add("$" & $cmd.len() & "\c\L")
   request.add(cmd & "\c\L")
@@ -347,7 +385,7 @@ proc sendCommand(r: Redis | AsyncRedis, cmd: string, arg1: string): Future[void]
     r.pipeline.expected += 1
     r.pipeline.buffer.add(request)
   else:
-    await r.socket.send(request)
+    await r.managedSend(request)
 
 proc sendCommand(r: Redis | AsyncRedis, cmd: string, arg1: string,
                  args: seq[string]): Future[void] {.multisync.} =
@@ -364,7 +402,7 @@ proc sendCommand(r: Redis | AsyncRedis, cmd: string, arg1: string,
     r.pipeline.expected += 1
     r.pipeline.buffer.add(request)
   else:
-    await r.socket.send(request)
+    await r.managedSend(request)
 
 # Keys
 
@@ -440,7 +478,7 @@ proc rename*(r: Redis | AsyncRedis, key, newkey: string): Future[RedisStatus] {.
   ##
   ## **WARNING:** Overwrites `newkey` if it exists!
   await r.sendCommand("RENAME", key, @[newkey])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc renameNX*(r: Redis | AsyncRedis, key, newkey: string): Future[bool] {.multisync.} =
   ## Same as ``rename`` but doesn't continue if `newkey` exists.
@@ -540,14 +578,14 @@ proc msetk*(
     args.add(key)
     args.add(value)
   await r.sendCommand("MSET", args)
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc setk*(r: Redis | AsyncRedis, key, value: string): Future[void] {.multisync.} =
   ## Set the string value of a key.
   ##
   ## NOTE: This function had to be renamed due to a clash with the `set` type.
   await r.sendCommand("SET", key, @[value])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc setNX*(r: Redis | AsyncRedis, key, value: string): Future[bool] {.multisync.} =
   ## Set the value of a key, only if the key does not exist. Returns `true`
@@ -564,7 +602,7 @@ proc setBit*(r: Redis | AsyncRedis, key: string, offset: int,
 proc setEx*(r: Redis | AsyncRedis, key: string, seconds: int, value: string): Future[RedisStatus] {.multisync.} =
   ## Set the value and expiration of a key
   await r.sendCommand("SETEX", key, @[$seconds, value])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc setRange*(r: Redis | AsyncRedis, key: string, offset: int,
                value: string): Future[RedisInteger] {.multisync.} =
@@ -627,7 +665,7 @@ proc hMSet*(r: Redis | AsyncRedis, key: string,
     args.add(field)
     args.add(value)
   await r.sendCommand("HMSET", args)
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc hSet*(r: Redis | AsyncRedis, key, field, value: string): Future[RedisInteger] {.multisync.} =
   ## Set the string value of a hash field
@@ -730,12 +768,12 @@ proc lRem*(r: Redis | AsyncRedis, key: string, value: string, count: int = 0): F
 proc lSet*(r: Redis | AsyncRedis, key: string, index: int, value: string): Future[void] {.multisync.} =
   ## Set the value of an element in a list by its index
   await r.sendCommand("LSET", key, @[$index, value])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc lTrim*(r: Redis | AsyncRedis, key: string, start, stop: int): Future[void] {.multisync.}  =
   ## Trim a list to the specified range
   await r.sendCommand("LTRIM", key, @[$start, $stop])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc rPop*(r: Redis | AsyncRedis, key: string): Future[RedisString] {.multisync.} =
   ## Remove and get the last element in a list
@@ -1035,7 +1073,7 @@ proc pfcount*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multis
 proc pfmerge*(r: Redis | AsyncRedis, destination: string, sources: seq[string]): Future[void] {.multisync.} =
   ## Merge several source HyperLogLog's into one specified by destKey
   await r.sendCommand("PFMERGE", destination, sources)
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 # Pub/Sub
 
@@ -1073,7 +1111,7 @@ proc unsubscribe*(r: Redis, [channel: openarray[string], : string): ???? =
 proc discardMulti*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Discard all commands issued after MULTI
   await r.sendCommand("DISCARD")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc exec*(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   ## Execute all commands issued after MULTI
@@ -1087,24 +1125,24 @@ proc multi*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Mark the start of a transaction block
   r.startPipelining()
   await r.sendCommand("MULTI")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc unwatch*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Forget about all watched keys
   await r.sendCommand("UNWATCH")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc watch*(r: Redis | AsyncRedis, key: seq[string]): Future[void] {.multisync.} =
   ## Watch the given keys to determine execution of the MULTI/EXEC block
   await r.sendCommand("WATCH", key)
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 # Connection
 
 proc auth*(r: Redis | AsyncRedis, password: string): Future[void] {.multisync.} =
   ## Authenticate to the server
   await r.sendCommand("AUTH", password)
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc echoServ*(r: Redis | AsyncRedis, message: string): Future[RedisString] {.multisync.} =
   ## Echo the given string
@@ -1119,7 +1157,7 @@ proc ping*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
 proc quit*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Close the connection
   await r.sendCommand("QUIT")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
   r.socket.close()
 
 proc select*(r: Redis | AsyncRedis, index: int): Future[RedisStatus] {.multisync.} =
@@ -1132,12 +1170,12 @@ proc select*(r: Redis | AsyncRedis, index: int): Future[RedisStatus] {.multisync
 proc bgrewriteaof*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Asynchronously rewrite the append-only file
   await r.sendCommand("BGREWRITEAOF")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc bgsave*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Asynchronously save the dataset to disk
   await r.sendCommand("BGSAVE")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc configGet*(r: Redis | AsyncRedis, parameter: string): Future[RedisList] {.multisync.} =
   ## Get the value of a configuration parameter
@@ -1147,12 +1185,12 @@ proc configGet*(r: Redis | AsyncRedis, parameter: string): Future[RedisList] {.m
 proc configSet*(r: Redis | AsyncRedis, parameter: string, value: string): Future[void] {.multisync.} =
   ## Set a configuration parameter to the given value
   await r.sendCommand("CONFIG", "SET", @[parameter, value])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc configResetStat*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Reset the stats returned by INFO
   await r.sendCommand("CONFIG", "RESETSTAT")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc dbsize*(r: Redis | AsyncRedis): Future[RedisInteger] {.multisync.} =
   ## Return the number of keys in the selected database
@@ -1171,12 +1209,12 @@ proc debugSegfault*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
 proc flushall*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   ## Remove all keys from all databases
   await r.sendCommand("FLUSHALL")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc flushdb*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   ## Remove all keys from the current database
   await r.sendCommand("FLUSHDB")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc info*(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
   ## Get information and statistics about the server
@@ -1198,7 +1236,7 @@ proc monitor*(r: Redis) =
 proc save*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Synchronously save the dataset to disk
   await r.sendCommand("SAVE")
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 proc shutdown*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Synchronously save the dataset to disk and then shut down the server
@@ -1208,16 +1246,17 @@ proc shutdown*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
     var taintedResult: TaintedString = recvLine(r.socket)
     let s = $taintedResult
     if len(s) != 0:
-      raise newException(RedisError, s)
+      raiseRedisError(r, s)
   else:
-    let s = await recvLine(r.socket)
+    let s = await managedRecvLine(r)
     if len(s) != 0:
-      raise newException(RedisError, s)
+      raiseRedisError(r, s)
+    finaliseCommand(r)
 
 proc slaveof*(r: Redis | AsyncRedis, host: string, port: string): Future[void] {.multisync.} =
   ## Make the server a slave of another instance, or promote it as master
   await r.sendCommand("SLAVEOF", host, @[port])
-  raiseNoOK(await r.readStatus(), r.pipeline.enabled)
+  raiseNoOK(r, await r.readStatus())
 
 iterator hPairs*(r: Redis, key: string): tuple[key, value: string] =
   ## Iterator for keys and values in a hash.
@@ -1243,6 +1282,10 @@ proc hPairs*(r: AsyncRedis, key: string): Future[seq[tuple[key, value: string]]]
     else:
       result.add((k, i))
       k = ""
+
+type
+  SendMode = enum
+    normal, pipelined, multiple
 
 proc someTests(r: Redis | AsyncRedis, how: SendMode): Future[seq[string]] {.multisync.} =
   var list: seq[string] = @[]

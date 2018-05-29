@@ -1,7 +1,9 @@
-import redis, unittest
+import redis, unittest, asyncdispatch
 
 suite "redis tests":
   let r = redis.open("localhost")
+  let keys = r.keys("*")
+  doAssert keys.len == 0, "Don't want to mess up an existing DB."
 
   test "simple set and get":
     const expected = "Hello, World!"
@@ -91,3 +93,34 @@ suite "redis tests":
   # delete all keys in the DB at the end of the tests
   discard r.flushdb()
   r.quit()
+
+suite "redis async tests":
+  let r = waitFor redis.openAsync("localhost")
+  let keys = waitFor r.keys("*")
+  doAssert keys.len == 0, "Don't want to mess up an existing DB."
+
+  test "issue #6":
+    # See `tawaitorder` for a test that doesn't depend on Redis.
+    const count = 5
+    proc retr(key: string, expect: string) {.async.} =
+      let val = await r.get(key)
+
+      doAssert val == expect
+
+    proc main(): Future[bool] {.async.} =
+      for i in 0 ..< count:
+        await r.setk("key" & $i, "value" & $i)
+
+      var futures: seq[Future[void]] = @[]
+      for i in 0 ..< count:
+        futures.add retr("key" & $i, "value" & $i)
+
+      for fut in futures:
+        await fut
+
+      return true
+
+    check (waitFor main())
+
+  discard waitFor r.flushdb()
+  waitFor r.quit()
