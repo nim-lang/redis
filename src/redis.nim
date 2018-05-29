@@ -122,16 +122,16 @@ proc managedSend(
   when r is Redis:
     r.socket.send(data)
   else:
-    proc doSend(fut: Future[void]) =
+    proc doSend() =
       r.currentCommand = some(data)
       asyncCheck r.socket.send(data)
     if r.currentCommand.isSome():
       # Queue this send.
       let sendFut = newFuture[void]("redis.managedSend")
-      sendFut.callback = doSend
       r.sendQueue.addLast(sendFut)
-    else:
-      doSend(nil)
+      await sendFut
+
+    doSend()
 
 proc managedRecv(
   r: Redis | AsyncRedis, size: int
