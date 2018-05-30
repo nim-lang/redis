@@ -103,7 +103,7 @@ proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.asyn
 
 proc finaliseCommand(r: Redis | AsyncRedis) =
   when r is AsyncRedis:
-    r.currentCommand = none[string]()
+    r.currentCommand = none(string)
     if r.sendQueue.len > 0:
       let fut = r.sendQueue.popFirst()
       fut.complete()
