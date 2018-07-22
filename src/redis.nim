@@ -305,14 +305,19 @@ proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   if line == nil:
     return @[]
 
-  var res = case line[0]
-    of '+', '-': @[r.parseStatus(line)]
-    of ':': @[$(r.parseInteger(line))]
-    of '$': (let x = await r.readSingleString(line, true); @[x.get(redisNil)])
-    of '*': await r.readArrayLines(line)
-    else:
-      raiseReplyError(r, "readNext failed on line: " & line)
-      nil
+  # TODO: This is no longer an expression due to
+  # https://github.com/nim-lang/Nim/issues/8399
+  var res: RedisList = nil
+  case line[0]
+  of '+', '-': res = @[r.parseStatus(line)]
+  of ':': res = @[$(r.parseInteger(line))]
+  of '$':
+    let x = await r.readSingleString(line, true)
+    res = @[x.get(redisNil)]
+  of '*':
+    res = await r.readArrayLines(line)
+  else:
+    raiseReplyError(r, "readNext failed on line: " & line)
 
   r.pipeline.expected -= 1
   return res
