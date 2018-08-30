@@ -148,7 +148,7 @@ proc managedRecv(
 
 proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if r.pipeline.enabled:
-    result = nil
+    result = ""
   else:
     when r is Redis:
       let taintedResult: TaintedString = recvLine(r.socket)
@@ -185,7 +185,7 @@ proc parseStatus(r: Redis | AsyncRedis, line: string = ""): RedisStatus =
 proc readStatus(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   let line = await r.managedRecvLine()
 
-  if line == nil:
+  if line.len == 0:
     return "PIPELINED"
 
   result = r.parseStatus(line)
@@ -212,7 +212,7 @@ proc parseInteger(r: Redis | AsyncRedis, line: string = ""): RedisInteger =
 
 proc readInteger(r: Redis | AsyncRedis): Future[RedisInteger] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return -1
 
   result = r.parseInteger(line)
@@ -246,7 +246,7 @@ proc readSingleString(
 proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
   # TODO: Rename these style of procedures to `processSingleString`?
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return ""
 
   let res = await r.readSingleString(line, allowMBNil = false)
@@ -260,10 +260,10 @@ proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList]
     raiseInvalidReply(r, '*', countLine[0])
 
   var numElems = parseInt(countLine.substr(1))
-  if numElems == -1:
-    return nil
-
   result = @[]
+
+  if numElems == -1:
+    return result
 
   for i in 1..numElems:
     when r is Redis:
@@ -271,20 +271,20 @@ proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList]
     else:
       var parsed = await r.readNext()
 
-    if not isNil(parsed):
+    if parsed.len > 0:
       for item in parsed:
         result.add(item)
 
 proc readArrayLines(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
-    return nil
+  if line.len == 0:
+    return @[]
 
   result = await r.readArrayLines(line)
 
 proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisString] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return ""
 
   let res = await r.readSingleString(line, allowMBNil)
@@ -293,7 +293,7 @@ proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisStri
 
 proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return @[]
 
   result = await r.readArrayLines(line)
@@ -302,12 +302,12 @@ proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
 proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
 
-  if line == nil:
+  if line.len == 0:
     return @[]
 
   # TODO: This is no longer an expression due to
   # https://github.com/nim-lang/Nim/issues/8399
-  var res: RedisList = nil
+  var res: RedisList = @[]
   case line[0]
   of '+', '-': res = @[r.parseStatus(line)]
   of ':': res = @[$(r.parseInteger(line))]
@@ -1319,7 +1319,7 @@ proc someTests(r: Redis | AsyncRedis, how: SendMode): Future[seq[string]] {.mult
   var p = await r.lRange("mylist", 0, -1)
 
   for i in items(p):
-    if not isNil(i):
+    if i.len > 0:
       list.add(i)
 
   list.add(await r.debugObject("mylist"))
