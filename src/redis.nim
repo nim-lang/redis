@@ -1075,6 +1075,11 @@ proc pfcount*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multis
   await r.sendCommand("PFCOUNT", key)
   result = await r.readInteger()
 
+proc pfcount*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Count approximate number of elements in 'HyperLogLog'
+  await r.sendCommand("PFCOUNT", keys)
+  result = await r.readInteger()
+
 proc pfmerge*(r: Redis | AsyncRedis, destination: string, sources: seq[string]): Future[void] {.multisync.} =
   ## Merge several source HyperLogLog's into one specified by destKey
   await r.sendCommand("PFMERGE", destination, sources)
