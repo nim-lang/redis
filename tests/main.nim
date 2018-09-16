@@ -88,6 +88,13 @@ suite "redis tests":
 
     check r.llen("redisTest:pushEntriesToList") == 5
 
+  test "pfcount supports single key and multiple keys":
+    discard r.pfadd("redisTest:pfcount1", @["foo"])
+    check r.pfcount("redisTest:pfcount1") == 1
+
+    discard r.pfadd("redisTest:pfcount2", @["bar"])
+    check r.pfcount(@["redisTest:pfcount1", "redisTest:pfcount2"]) == 2
+
   # TODO: Ideally tests for all other procedures, will add these in the future
 
   # delete all keys in the DB at the end of the tests
