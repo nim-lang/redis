@@ -758,6 +758,19 @@ proc lPush*(r: Redis | AsyncRedis, key, value: string, create: bool = true): Fut
 
   result = await r.readInteger()
 
+
+proc lLPush*(r: Redis | AsyncRedis, key: string, values: seq[string], create: bool = true): Future[RedisInteger] {.multisync.} =
+  ## Append a value to a list. Returns the length of the list after the push.
+  ## The ``create`` param specifies whether a list should be created if it
+  ## doesn't exist at ``key``. More specifically if ``create`` is true, `RPUSH`
+  ## will be used, otherwise `RPUSHX`.
+  if create:
+    await r.sendCommand("LPUSH", key, values)
+  else:
+    await r.sendCommand("LPUSHX", key, values)
+
+  result = await r.readInteger()  
+
 proc lRange*(r: Redis | AsyncRedis, key: string, start, stop: int): Future[RedisList] {.multisync.} =
   ## Get a range of elements from a list. Returns `nil` when `key`
   ## doesn't exist.
@@ -802,11 +815,29 @@ proc rPush*(r: Redis | AsyncRedis, key, value: string, create: bool = true): Fut
 
   result = await r.readInteger()
 
+
+proc rLPush*(r: Redis | AsyncRedis, key: string, values: seq[string], create: bool = true): Future[RedisInteger] {.multisync.} =
+  ## Append a value to a list. Returns the length of the list after the push.
+  ## The ``create`` param specifies whether a list should be created if it
+  ## doesn't exist at ``key``. More specifically if ``create`` is true, `RPUSH`
+  ## will be used, otherwise `RPUSHX`.
+  if create:
+    await r.sendCommand("RPUSH", key, values)
+  else:
+    await r.sendCommand("RPUSHX", key, values)
+
+  result = await r.readInteger()  
+
 # Sets
 
 proc sadd*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Add a member to a set
   await r.sendCommand("SADD", key, @[member])
+  result = await r.readInteger()
+
+proc sladd*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Add a member to a set
+  await r.sendCommand("SADD", key, members)
   result = await r.readInteger()
 
 proc scard*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
