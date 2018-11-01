@@ -249,9 +249,6 @@ proc readSingleString(
 proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
   # TODO: Rename these style of procedures to `processSingleString`?
   let line = await r.managedRecvLine()
-
-  echo "log line", line
-
   if line.len == 0:
     return ""
 
