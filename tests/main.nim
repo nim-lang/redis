@@ -129,5 +129,27 @@ suite "redis async tests":
 
     check (waitFor main())
 
+  test "pub/sub":
+
+    proc main() {.async.} =
+      let sub = waitFor redis.openAsync("localhost")
+      let pub = waitFor redis.openAsync("localhost")
+
+      let listerns = await pub.publish("channel1", "hi there")
+      doAssert listerns == 0
+
+      await sub.subscribe("channel1")
+      # you should only call sub.nextMessage() from now on
+
+      discard await pub.publish("channel1", "one")
+      discard await pub.publish("channel1", "two")
+      discard await pub.publish("channel1", "three")
+
+      doAssert (await sub.nextMessage()).message == "one"
+      doAssert (await sub.nextMessage()).message == "two"
+      doAssert (await sub.nextMessage()).message == "three"
+
+    waitFor main()
+
   discard waitFor r.flushdb()
   waitFor r.quit()
