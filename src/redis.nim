@@ -61,7 +61,10 @@ type
     ## Bulk reply
   RedisList* = seq[RedisString]
     ## Multi-bulk reply
-
+  RedisMessage* = object
+    ## Pub/Sub
+    channel*: string
+    message*: string
   ReplyError* = object of IOError ## Invalid reply from redis
   RedisError* = object of IOError ## Error in redis
 
@@ -148,7 +151,7 @@ proc managedRecv(
 
 proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if r.pipeline.enabled:
-    result = nil
+    result = ""
   else:
     when r is Redis:
       let taintedResult: TaintedString = recvLine(r.socket)
@@ -185,7 +188,7 @@ proc parseStatus(r: Redis | AsyncRedis, line: string = ""): RedisStatus =
 proc readStatus(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   let line = await r.managedRecvLine()
 
-  if line == nil:
+  if line.len == 0:
     return "PIPELINED"
 
   result = r.parseStatus(line)
@@ -212,7 +215,7 @@ proc parseInteger(r: Redis | AsyncRedis, line: string = ""): RedisInteger =
 
 proc readInteger(r: Redis | AsyncRedis): Future[RedisInteger] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return -1
 
   result = r.parseInteger(line)
@@ -246,7 +249,7 @@ proc readSingleString(
 proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
   # TODO: Rename these style of procedures to `processSingleString`?
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return ""
 
   let res = await r.readSingleString(line, allowMBNil = false)
@@ -260,10 +263,10 @@ proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList]
     raiseInvalidReply(r, '*', countLine[0])
 
   var numElems = parseInt(countLine.substr(1))
-  if numElems == -1:
-    return nil
-
   result = @[]
+
+  if numElems == -1:
+    return result
 
   for i in 1..numElems:
     when r is Redis:
@@ -271,20 +274,20 @@ proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList]
     else:
       var parsed = await r.readNext()
 
-    if not isNil(parsed):
+    if parsed.len > 0:
       for item in parsed:
         result.add(item)
 
 proc readArrayLines(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
-    return nil
+  if line.len == 0:
+    return @[]
 
   result = await r.readArrayLines(line)
 
 proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisString] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return ""
 
   let res = await r.readSingleString(line, allowMBNil)
@@ -293,7 +296,7 @@ proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisStri
 
 proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
-  if line == nil:
+  if line.len == 0:
     return @[]
 
   result = await r.readArrayLines(line)
@@ -302,12 +305,12 @@ proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
 proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   let line = await r.managedRecvLine()
 
-  if line == nil:
+  if line.len == 0:
     return @[]
 
   # TODO: This is no longer an expression due to
   # https://github.com/nim-lang/Nim/issues/8399
-  var res: RedisList = nil
+  var res: RedisList = @[]
   case line[0]
   of '+', '-': res = @[r.parseStatus(line)]
   of ':': res = @[$(r.parseInteger(line))]
@@ -758,6 +761,18 @@ proc lPush*(r: Redis | AsyncRedis, key, value: string, create: bool = true): Fut
 
   result = await r.readInteger()
 
+proc lLPush*(r: Redis | AsyncRedis, key: string, values: seq[string], create: bool = true): Future[RedisInteger] {.multisync.} =
+  ## Append a value to a list. Returns the length of the list after the push.
+  ## The ``create`` param specifies whether a list should be created if it
+  ## doesn't exist at ``key``. More specifically if ``create`` is true, `RPUSH`
+  ## will be used, otherwise `RPUSHX`.
+  if create:
+    await r.sendCommand("LPUSH", key, values)
+  else:
+    await r.sendCommand("LPUSHX", key, values)
+
+  result = await r.readInteger()
+
 proc lRange*(r: Redis | AsyncRedis, key: string, start, stop: int): Future[RedisList] {.multisync.} =
   ## Get a range of elements from a list. Returns `nil` when `key`
   ## doesn't exist.
@@ -802,11 +817,28 @@ proc rPush*(r: Redis | AsyncRedis, key, value: string, create: bool = true): Fut
 
   result = await r.readInteger()
 
+proc rLPush*(r: Redis | AsyncRedis, key: string, values: seq[string], create: bool = true): Future[RedisInteger] {.multisync.} =
+  ## Append a value to a list. Returns the length of the list after the push.
+  ## The ``create`` param specifies whether a list should be created if it
+  ## doesn't exist at ``key``. More specifically if ``create`` is true, `RPUSH`
+  ## will be used, otherwise `RPUSHX`.
+  if create:
+    await r.sendCommand("RPUSH", key, values)
+  else:
+    await r.sendCommand("RPUSHX", key, values)
+
+  result = await r.readInteger()
+
 # Sets
 
 proc sadd*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Add a member to a set
   await r.sendCommand("SADD", key, @[member])
+  result = await r.readInteger()
+
+proc sladd*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Add a member to a set
+  await r.sendCommand("SADD", key, members)
   result = await r.readInteger()
 
 proc scard*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
@@ -1087,34 +1119,37 @@ proc pfmerge*(r: Redis | AsyncRedis, destination: string, sources: seq[string]):
 
 # Pub/Sub
 
-# TODO: pub/sub -- I don't think this will work synchronously.
-discard """
-proc psubscribe*(r: Redis, pattern: openarray[string]): ???? =
-  ## Listen for messages published to channels matching the given patterns
-  r.socket.send("PSUBSCRIBE $#\c\L" % pattern)
-  return ???
+# proc psubscribe*(r: Redis, pattern: openarray[string]): ???? =
+#   ## Listen for messages published to channels matching the given patterns
+#   r.socket.send("PSUBSCRIBE $#\c\L" % pattern)
+#   return ???
 
-proc publish*(r: Redis, channel: string, message: string): RedisInteger =
+proc publish*(r: Redis | AsyncRedis, channel: string, message: string): Future[RedisInteger] {.multisync.} =
   ## Post a message to a channel
-  r.socket.send("PUBLISH $# $#\c\L" % [channel, message])
-  return r.readInteger()
+  await r.sendCommand("PUBLISH", channel, @[message])
+  result = await r.readInteger()
 
-proc punsubscribe*(r: Redis, [pattern: openarray[string], : string): ???? =
-  ## Stop listening for messages posted to channels matching the given patterns
-  r.socket.send("PUNSUBSCRIBE $# $#\c\L" % [[pattern.join(), ])
-  return ???
+# proc punsubscribe*(r: Redis, [pattern: openarray[string], : string): ???? =
+#   ## Stop listening for messages posted to channels matching the given patterns
+#   r.socket.send("PUNSUBSCRIBE $# $#\c\L" % [[pattern.join(), ])
+#   return ???
 
-proc subscribe*(r: Redis, channel: openarray[string]): ???? =
+proc subscribe*(r: AsyncRedis, channel: string) {.async.} =
   ## Listen for messages published to the given channels
-  r.socket.send("SUBSCRIBE $#\c\L" % channel.join)
-  return ???
+  await r.sendCommand("SUBSCRIBE", @[channel])
+  let commandback = await r.readNext()
 
-proc unsubscribe*(r: Redis, [channel: openarray[string], : string): ???? =
-  ## Stop listening for messages posted to the given channels
-  r.socket.send("UNSUBSCRIBE $# $#\c\L" % [[channel.join(), ])
-  return ???
+# proc unsubscribe*(r: Redis, [channel: openarray[string], : string): ???? =
+#   ## Stop listening for messages posted to the given channels
+#   r.socket.send("UNSUBSCRIBE $# $#\c\L" % [[channel.join(), ])
+#   return ???
 
-"""
+proc nextMessage*(r: AsyncRedis): Future[RedisMessage] {.async.} =
+  let msg = await r.readNext()
+  assert msg[0] == "message"
+  result = RedisMessage()
+  result.channel = msg[1]
+  result.message = msg[2]
 
 # Transactions
 
@@ -1302,7 +1337,7 @@ proc someTests(r: Redis | AsyncRedis, how: SendMode): Future[seq[string]] {.mult
 
   if how == pipelined:
     r.startPipelining()
-  elif how ==  multiple:
+  elif how == multiple:
     await r.multi()
 
   await r.setk("nim:test", "Testing something.")
@@ -1324,7 +1359,7 @@ proc someTests(r: Redis | AsyncRedis, how: SendMode): Future[seq[string]] {.mult
   var p = await r.lRange("mylist", 0, -1)
 
   for i in items(p):
-    if not isNil(i):
+    if i.len > 0:
       list.add(i)
 
   list.add(await r.debugObject("mylist"))
