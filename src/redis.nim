@@ -1,7 +1,8 @@
 #
 #
 #            Nim's Runtime Library
-#        (c) Copyright 2012 Dominik Picheta
+#        (c) Copyright 2019 Dominik Picheta
+#               and contributors
 #
 #    See the file "copying.txt", included in this
 #    distribution, for details about the copyright.
@@ -20,16 +21,17 @@
 ## .. code-block::nim
 ##    import redis, asyncdispatch
 ##
-##    ## Open a connection to Redis running on localhost on the default port (6379)
-##    let redisClient = openAsync()
+##    proc main() {.async.} =
+##      ## Open a connection to Redis running on localhost on the default port (6379)
+##      let redisClient = await openAsync()
 ##
-##    ## Set the key `nim_redis:test` to the value `Hello, World`
-##    await redisClient.setk("nim_redis:test", "Hello, World")
+##      ## Set the key `nim_redis:test` to the value `Hello, World`
+##      await redisClient.setk("nim_redis:test", "Hello, World")
 ##
-##    ## Get the value of the key `nim_redis:test`
-##    let value = await redisClient.get("nim_redis:test")
+##      ## Get the value of the key `nim_redis:test`
+##      let value = await redisClient.get("nim_redis:test")
 ##
-##    assert(value == "Hello, World")
+##      assert(value == "Hello, World")
 
 import net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
 
