@@ -23,20 +23,21 @@ nimble install redis
 ```nim
 import redis, asyncdispatch
 
-## Open a connection to Redis running on localhost on the default port (6379)
-let redisClient = openAsync()
+proc main() {.async.} =
+  ## Open a connection to Redis running on localhost on the default port (6379)
+  let redisClient = await openAsync()
 
-## Set the key `nim_redis:test` to the value `Hello, World`
-await redisClient.setk("nim_redis:test", "Hello, World")
+  ## Set the key `nim_redis:test` to the value `Hello, World`
+  await redisClient.setk("nim_redis:test", "Hello, World")
 
-## Get the value of the key `nim_redis:test`
-let value = await redisClient.get("nim_redis:test")
+  ## Get the value of the key `nim_redis:test`
+  let value = await redisClient.get("nim_redis:test")
 
-assert(value == "Hello, World")
+  assert(value == "Hello, World")
 ```
 
 There is also a synchronous version of the client, that can be created using the `open()` procedure rather than `openAsync()`.
 
 ## License
 
-Copyright (C) 2015, 2017 Dominik Picheta. All rights reserved.
+Copyright (C) 2015, 2017 Dominik Picheta and contributors. All rights reserved.
