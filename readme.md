@@ -34,6 +34,8 @@ proc main() {.async.} =
   let value = await redisClient.get("nim_redis:test")
 
   assert(value == "Hello, World")
+
+waitFor main()
 ```
 
 There is also a synchronous version of the client, that can be created using the `open()` procedure rather than `openAsync()`.

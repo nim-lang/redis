@@ -32,6 +32,8 @@
 ##      let value = await redisClient.get("nim_redis:test")
 ##
 ##      assert(value == "Hello, World")
+##
+##    waitFor main()
 
 import net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
 
