@@ -1017,7 +1017,7 @@ proc zrank*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisStr
   try:
     result = $(await r.readInteger())
   except ReplyError:
-    discard
+    result = redisNil
 
 proc zrem*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Remove a member from a sorted set
@@ -1074,7 +1074,7 @@ proc zrevrank*(r: Redis | AsyncRedis, key: string, member: string): Future[Redis
   try:
     result = $(await r.readInteger())
   except ReplyError:
-    discard
+    result = redisNil
 
 proc zscore*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisString] {.multisync.} =
   ## Get the score associated with the given member in a sorted set
