@@ -1014,7 +1014,10 @@ proc zrangebylex*(r: Redis | AsyncRedis, key: string, start: string, stop: strin
 proc zrank*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisString] {.multisync.} =
   ## Determine the index of a member in a sorted set
   await r.sendCommand("ZRANK", key, @[member])
-  result = await r.readBulkString()
+  try:
+    result = $(await r.readInteger())
+  except ReplyError:
+    result = redisNil
 
 proc zrem*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Remove a member from a sorted set
@@ -1068,7 +1071,10 @@ proc zrevrank*(r: Redis | AsyncRedis, key: string, member: string): Future[Redis
   ## Determine the index of a member in a sorted set, with
   ## scores ordered from high to low
   await r.sendCommand("ZREVRANK", key, @[member])
-  result = await r.readBulkString()
+  try:
+    result = $(await r.readInteger())
+  except ReplyError:
+    result = redisNil
 
 proc zscore*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisString] {.multisync.} =
   ## Get the score associated with the given member in a sorted set
