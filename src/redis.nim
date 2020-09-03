@@ -35,7 +35,7 @@
 ##
 ##    waitFor main()
 
-import net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
+import std/net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
 
 const
   redisNil* = "\0\0"
