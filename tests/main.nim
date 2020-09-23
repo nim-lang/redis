@@ -95,6 +95,30 @@ suite "redis tests":
     discard r.pfadd("redisTest:pfcount2", @["bar"])
     check r.pfcount(@["redisTest:pfcount1", "redisTest:pfcount2"]) == 2
 
+  test "sorted sets":
+    const expected = 1
+
+    discard r.zadd("redisTest:myzset", 1, "one")
+    discard r.zadd("redisTest:myzset", 2, "two")
+    discard r.zadd("redisTest:myzset", 3, "three")
+
+    assert r.zcard("redisTest:myzset") == 3
+
+    assert r.zcount("redisTest:myzset", "-inf", "+inf") == 3
+    assert r.zcount("redisTest:myzset", "(1", "3") == 2
+
+    discard r.zadd("redisTest:myzset", 2, "four")
+    discard r.zincrby("redisTest:myzset", 2, "four")
+    assert r.zscore("redisTest:myzset", "four") == 4
+
+    
+
+
+    assert r.zrange("redisTest:myzset", 2, 3) == @["three", "four"]
+
+
+
+
   # TODO: Ideally tests for all other procedures, will add these in the future
 
   # delete all keys in the DB at the end of the tests

@@ -911,7 +911,7 @@ proc sunionstore*(r: Redis | AsyncRedis, destination: string,
 
 # Sorted sets
 
-proc zadd*(r: Redis | AsyncRedis, key: string, score: int, member: string): Future[RedisInteger] {.multisync.} =
+proc zadd*(r: Redis | AsyncRedis, key: string, score: SomeInteger, member: string): Future[RedisInteger] {.multisync.} =
   ## Add a member to a sorted set, or update its score if it already exists
   await r.sendCommand("ZADD", key, @[$score, member])
   result = await r.readInteger()
@@ -926,10 +926,10 @@ proc zcount*(r: Redis | AsyncRedis, key: string, min: string, max: string): Futu
   await r.sendCommand("ZCOUNT", key, @[min, max])
   result = await r.readInteger()
 
-proc zincrby*(r: Redis | AsyncRedis, key: string, increment: string,
+proc zincrby*(r: Redis | AsyncRedis, key: string, increment: SomeInteger,
              member: string): Future[RedisString] {.multisync.}  =
   ## Increment the score of a member in a sorted set
-  await r.sendCommand("ZINCRBY", key, @[increment, member])
+  await r.sendCommand("ZINCRBY", key, @[$increment, member])
   result = await r.readBulkString()
 
 proc zinterstore*(r: Redis | AsyncRedis, destination: string, numkeys: string,
@@ -959,24 +959,24 @@ proc zinterstore*(r: Redis | AsyncRedis, destination: string, numkeys: string,
 
   result = await r.readInteger()
 
-proc zrange*(r: Redis | AsyncRedis, key: string, start: string, stop: string,
+proc zrange*(r: Redis | AsyncRedis, key: string, start: SomeInteger, stop: SomeInteger,
             withScores: bool = false): Future[RedisList] {.multisync.} =
   ## Return a range of members in a sorted set, by index
   if not withScores:
-    await r.sendCommand("ZRANGE", key, @[start, stop])
+    await r.sendCommand("ZRANGE", key, @[$start, $stop])
   else:
-    await r.sendCommand("ZRANGE", key, @[start, stop, "WITHSCORES"])
+    await r.sendCommand("ZRANGE", key, @[$start, $stop, "WITHSCORES"])
 
   result = await r.readArray()
 
-proc zrangebyscore*(r: Redis | AsyncRedis, key: string, min: string, max: string,
+proc zrangebyscore*(r: Redis | AsyncRedis, key: string, min: SomeInteger, max: SomeInteger,
                    withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): Future[RedisList] {.multisync.} =
   ## Return a range of members in a sorted set, by score
   var args = newSeqOfCap[string](3 + (if withScores: 1 else: 0) + (if limit: 3 else: 0))
   args.add(key)
-  args.add(min)
-  args.add(max)
+  args.add($min)
+  args.add($max)
 
   if withScores: args.add("WITHSCORES")
   if limit:
@@ -987,14 +987,14 @@ proc zrangebyscore*(r: Redis | AsyncRedis, key: string, min: string, max: string
   await r.sendCommand("ZRANGEBYSCORE", args)
   result = await r.readArray()
 
-proc zrangebylex*(r: Redis | AsyncRedis, key: string, start: string, stop: string,
+proc zrangebylex*(r: Redis | AsyncRedis, key: string, start: SomeInteger, stop: SomeInteger,
                   limit: bool = false, limitOffset: int = 0,
                   limitCount: int = 0): Future[RedisList] {.multisync.} =
   ## Return a range of members in a sorted set, ordered lexicographically
   var args = newSeqOfCap[string](3 + (if limit: 3 else: 0))
   args.add(key)
-  args.add(start)
-  args.add(stop)
+  args.add($start)
+  args.add($stop)
   if limit:
     args.add("LIMIT")
     args.add($limitOffset)
@@ -1016,38 +1016,38 @@ proc zrem*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInte
   await r.sendCommand("ZREM", key, @[member])
   result = await r.readInteger()
 
-proc zremrangebyrank*(r: Redis | AsyncRedis, key: string, start: string,
-                     stop: string): Future[RedisInteger] {.multisync.} =
+proc zremrangebyrank*(r: Redis | AsyncRedis, key: string, start: SomeInteger,
+                     stop: SomeInteger): Future[RedisInteger] {.multisync.} =
   ## Remove all members in a sorted set within the given indexes
-  await r.sendCommand("ZREMRANGEBYRANK", key, @[start, stop])
+  await r.sendCommand("ZREMRANGEBYRANK", key, @[$start, $stop])
   result = await r.readInteger()
 
-proc zremrangebyscore*(r: Redis | AsyncRedis, key: string, min: string,
-                      max: string): Future[RedisInteger] {.multisync.} =
+proc zremrangebyscore*(r: Redis | AsyncRedis, key: string, min: SomeInteger,
+                      max: SomeInteger): Future[RedisInteger] {.multisync.} =
   ## Remove all members in a sorted set within the given scores
-  await r.sendCommand("ZREMRANGEBYSCORE", key, @[min, max])
+  await r.sendCommand("ZREMRANGEBYSCORE", key, @[$min, $max])
   result = await r.readInteger()
 
-proc zrevrange*(r: Redis | AsyncRedis, key: string, start: string, stop: string,
+proc zrevrange*(r: Redis | AsyncRedis, key: string, start: SomeInteger, stop: SomeInteger,
                withScores: bool = false): Future[RedisList] {.multisync.} =
   ## Return a range of members in a sorted set, by index,
   ## with scores ordered from high to low
   if withScores:
-    await r.sendCommand("ZREVRANGE", key, @[start, stop, "WITHSCORES"])
+    await r.sendCommand("ZREVRANGE", key, @[$start, $stop, "WITHSCORES"])
   else:
-    await r.sendCommand("ZREVRANGE", key, @[start, stop])
+    await r.sendCommand("ZREVRANGE", key, @[$start, $stop])
 
   result = await r.readArray()
 
-proc zrevrangebyscore*(r: Redis | AsyncRedis, key: string, min: string, max: string,
+proc zrevrangebyscore*(r: Redis | AsyncRedis, key: string, min: SomeInteger, max: SomeInteger,
                    withScores: bool = false, limit: bool = false,
                    limitOffset: int = 0, limitCount: int = 0): Future[RedisList] {.multisync.} =
   ## Return a range of members in a sorted set, by score, with
   ## scores ordered from high to low
   var args = newSeqOfCap[string](3 + (if withScores: 1 else: 0) + (if limit: 3 else: 0))
   args.add(key)
-  args.add(min)
-  args.add(max)
+  args.add($min)
+  args.add($max)
 
   if withScores: args.add("WITHSCORES")
   if limit:
@@ -1067,10 +1067,10 @@ proc zrevrank*(r: Redis | AsyncRedis, key: string, member: string): Future[Redis
   except ReplyError:
     result = redisNil
 
-proc zscore*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisString] {.multisync.} =
+proc zscore*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Get the score associated with the given member in a sorted set
   await r.sendCommand("ZSCORE", key, @[member])
-  result = await r.readBulkString()
+  result = parseInt(await r.readBulkString())
 
 proc zunionstore*(r: Redis | AsyncRedis, destination: string, numkeys: string,
                  keys: seq[string], weights: seq[string] = @[],
