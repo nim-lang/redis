@@ -259,8 +259,8 @@ proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} 
   result = res.get(redisNil)
   finaliseCommand(r)
 
-proc readNext(r: Redis): RedisList
-proc readNext(r: AsyncRedis): Future[RedisList]
+proc readNext(r: Redis): RedisList {.gcsafe.}
+proc readNext(r: AsyncRedis): Future[RedisList] {.gcsafe.}
 proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList] {.multisync.} =
   if countLine[0] != '*':
     raiseInvalidReply(r, '*', countLine[0])
