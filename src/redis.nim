@@ -1141,7 +1141,7 @@ proc subscribe*(r: AsyncRedis, channel: string) {.async.} =
 
 proc subscribe*(r: AsyncRedis, channels: seq[string]) {.async.} =
   ## Listen for messages published to the given channels
-  await r.sendCommand("SUBSCRIBE", @[channel])
+  await r.sendCommand("SUBSCRIBE", @[channels])
   for c in channels:
     let commandback = await r.readNext()
 
