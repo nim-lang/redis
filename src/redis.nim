@@ -1135,15 +1135,9 @@ proc publish*(r: Redis | AsyncRedis, channel: string, message: string): Future[R
 #   return ???
 
 proc subscribe*(r: AsyncRedis, channel: string) {.async.} =
-  ## Listen for messages published to the given channel
+  ## Listen for messages published to the given channels
   await r.sendCommand("SUBSCRIBE", @[channel])
   let commandback = await r.readNext()
-
-proc subscribe*(r: AsyncRedis, channels: seq[string]) {.async.} =
-  ## Listen for messages published to the given channels
-  await r.sendCommand("SUBSCRIBE", @[channels])
-  for c in channels:
-    let commandback = await r.readNext()
 
 # proc unsubscribe*(r: Redis, [channel: openarray[string], : string): ???? =
 #   ## Stop listening for messages posted to the given channels
