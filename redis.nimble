@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.3.0"
+version       = "0.4.0"
 author        = "Dominik Picheta"
 description   = "Official redis client for Nim"
 license       = "MIT"
