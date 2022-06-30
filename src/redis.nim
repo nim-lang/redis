@@ -1195,6 +1195,11 @@ proc auth*(r: Redis | AsyncRedis, password: string): Future[void] {.multisync.} 
   await r.sendCommand("AUTH", password)
   raiseNoOK(r, await r.readStatus())
 
+proc auth*(r: Redis | AsyncRedis, username: string, password: string): Future[void] {.multisync.} =
+  ## Authenticate to a server that uses Redis ACLs
+  await r.sendCommand("AUTH", @[username, password])
+  raiseNoOK(r, await r.readStatus())
+
 proc echoServ*(r: Redis | AsyncRedis, message: string): Future[RedisString] {.multisync.} =
   ## Echo the given string
   await r.sendCommand("ECHO", message)
