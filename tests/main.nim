@@ -1,6 +1,6 @@
 import redis, unittest, asyncdispatch
 
-suite "redis tests":
+template syncTests() =
   let r = redis.open("localhost")
   let keys = r.keys("*")
   doAssert keys.len == 0, "Don't want to mess up an existing DB."
@@ -100,6 +100,8 @@ suite "redis tests":
   # delete all keys in the DB at the end of the tests
   discard r.flushdb()
   r.quit()
+suite "redis tests":
+  syncTests()
 
 suite "redis async tests":
   let r = waitFor redis.openAsync("localhost")
@@ -153,3 +155,14 @@ suite "redis async tests":
 
   discard waitFor r.flushdb()
   waitFor r.quit()
+
+
+when compileOption("threads"):
+  proc threadFunc() {.thread.} =
+    suite "redis threaded tests":
+      syncTests()
+
+  var th: Thread[void]
+  createThread(th, threadFunc)
+  joinThread(th)
+
