@@ -97,6 +97,15 @@ proc open*(host = "localhost", port = 6379.Port): Redis =
 
   result.socket.connect(host, port)
 
+proc openUnix*(path = "/var/run/redis/redis.sock"): Redis =
+  ## Open a synchronous unix connection to a redis server.
+  result = Redis(
+    socket: newSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
+    pipeline: newPipeline()
+  )
+
+  result.socket.connectUnix(path)
+
 proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.async.} =
   ## Open an asynchronous connection to a redis server.
   result = AsyncRedis(
@@ -106,6 +115,16 @@ proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.asyn
   )
 
   await result.socket.connect(host, port)
+
+proc openUnixAsync*(path = "/var/run/redis/redis.sock"): Future[AsyncRedis] {.async.} =
+  ## Open an asynchronous unix connection to a redis server.
+  result = AsyncRedis(
+    socket: newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
+    pipeline: newPipeline(),
+    sendQueue: initDeque[Future[void]]()
+  )
+
+  await result.socket.connectUnix(path)
 
 proc finaliseCommand(r: Redis | AsyncRedis) =
   when r is AsyncRedis:
