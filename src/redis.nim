@@ -1229,8 +1229,13 @@ proc ping*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   await r.sendCommand("PING")
   result = await r.readStatus()
 
-proc quit*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
+proc close*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Close the connection
+  r.socket.close()
+
+proc quit*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
+  ## Close the connection with using QUIT command
+  ## Note: This command is regarded as deprecated since Redis version 7.2.0.
   await r.sendCommand("QUIT")
   raiseNoOK(r, await r.readStatus())
   r.socket.close()
