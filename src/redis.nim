@@ -145,7 +145,11 @@ proc managedSend(
   r: Redis | AsyncRedis, data: string
 ): Future[void] {.multisync.} =
   when r is Redis:
-    r.socket.send(data)
+    when defined(windows):
+      if not r.socket.trySend(data):
+        r.socket.close()
+    else:
+      r.socket.send(data)
   else:
     proc doSend() =
       r.currentCommand = some(data)
@@ -176,7 +180,7 @@ proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
     result = ""
   else:
     when r is Redis:
-      let taintedResult: TaintedString = recvLine(r.socket)
+      let taintedResult = recvLine(r.socket)
       result = $taintedResult
     else:
       result = await recvLine(r.socket)
@@ -256,7 +260,7 @@ proc readSingleString(
   # Some commands return a /bulk/ value or a /multi-bulk/ nil. Odd.
   if allowMBNil:
     if line == "*-1":
-       return
+      return
 
   if line[0] != '$':
     raiseInvalidReply(r, '$', line[0])
@@ -361,8 +365,8 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
   for i in 0..tot-1:
     var ret = await r.readNext()
     for item in ret:
-     if not (item.contains("OK") or item.contains("QUEUED")):
-       result.add(item)
+      if not (item.contains("OK") or item.contains("QUEUED")):
+        result.add(item)
 
   r.pipeline.expected = 0
 
@@ -746,7 +750,7 @@ proc bRPopLPush*(r: Redis | AsyncRedis, source, destination: string,
   await r.sendCommand("BRPOPLPUSH", source, @[destination, $timeout])
   result = await r.readBulkString(true) # Multi-Bulk nil allowed.
 
-proc lIndex*(r: Redis | AsyncRedis, key: string, index: int): Future[RedisString]  {.multisync.} =
+proc lIndex*(r: Redis | AsyncRedis, key: string, index: int): Future[RedisString] {.multisync.} =
   ## Get an element from a list by its index
   await r.sendCommand("LINDEX", key, @[$index])
   result = await r.readBulkString()
@@ -808,7 +812,7 @@ proc lSet*(r: Redis | AsyncRedis, key: string, index: int, value: string): Futur
   await r.sendCommand("LSET", key, @[$index, value])
   raiseNoOK(r, await r.readStatus())
 
-proc lTrim*(r: Redis | AsyncRedis, key: string, start, stop: int): Future[void] {.multisync.}  =
+proc lTrim*(r: Redis | AsyncRedis, key: string, start, stop: int): Future[void] {.multisync.} =
   ## Trim a list to the specified range
   await r.sendCommand("LTRIM", key, @[$start, $stop])
   raiseNoOK(r, await r.readStatus())
@@ -946,7 +950,7 @@ proc zcount*(r: Redis | AsyncRedis, key: string, min: string, max: string): Futu
   result = await r.readInteger()
 
 proc zincrby*(r: Redis | AsyncRedis, key: string, increment: string,
-             member: string): Future[RedisString] {.multisync.}  =
+             member: string): Future[RedisString] {.multisync.} =
   ## Increment the score of a member in a sorted set
   await r.sendCommand("ZINCRBY", key, @[increment, member])
   result = await r.readBulkString()
@@ -1388,9 +1392,9 @@ proc someTests(r: Redis | AsyncRedis, how: SendMode): Future[seq[string]] {.mult
   for r in res:
     list.add(r)
   list.add(await r.get("invalid_key"))
-  list.add($(await r.lPush("mylist","itema")))
-  list.add($(await r.lPush("mylist","itemb")))
-  await r.lTrim("mylist",0,1)
+  list.add($(await r.lPush("mylist", "itema")))
+  list.add($(await r.lPush("mylist", "itemb")))
+  await r.lTrim("mylist", 0, 1)
   var p = await r.lRange("mylist", 0, -1)
 
   for i in items(p):
