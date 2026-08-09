@@ -13,6 +13,18 @@ template syncTests() =
 
     check actual == expected
 
+  test "get returns values byte-for-byte":
+    # Regression test for https://github.com/nim-lang/redis/issues/44:
+    # bulk replies were passed through strip(), corrupting values with
+    # leading/trailing whitespace. Bulk strings are binary safe, so
+    # embedded CRLF and NUL bytes must survive the round trip too.
+    const expected = " \t padded\r\nvalue\0 \n "
+
+    r.setk("redisTests:whitespacePreserved", expected)
+    let actual = r.get("redisTests:whitespacePreserved")
+
+    check actual == expected
+
   test "increment key by one":
     const expected = 3
 

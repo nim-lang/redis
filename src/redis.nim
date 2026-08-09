@@ -265,8 +265,11 @@ proc readSingleString(
   if numBytes == -1:
     return
 
+  # Bulk strings are binary safe; drop only the trailing CRLF, never
+  # whitespace belonging to the value itself.
   var s = await r.managedRecv(numBytes + 2)
-  result = some(strip(s))
+  s.setLen(numBytes)
+  result = some(s)
 
 proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} =
   # TODO: Rename these style of procedures to `processSingleString`?
