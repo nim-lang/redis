@@ -10,6 +10,9 @@ jobs:
       - run:
           name: test
           command: nim c -r tests/main.nim
+      - run:
+          name: test closed connection handling
+          command: nim c -r tests/tclosedconn.nim
   build_alpine:
     working_directory: /usr/src/redis
     docker:
@@ -20,6 +23,9 @@ jobs:
       - run:
           name: test
           command: nim c -r tests/main.nim
+      - run:
+          name: test closed connection handling
+          command: nim c -r tests/tclosedconn.nim
 workflows:
   version: 2
   build_and_test:
