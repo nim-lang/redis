@@ -173,13 +173,19 @@ proc managedRecv(
 
 proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if r.pipeline.enabled:
-    result = ""
+    return ""
+
+  when r is Redis:
+    let taintedResult: TaintedString = recvLine(r.socket)
+    result = $taintedResult
   else:
-    when r is Redis:
-      let taintedResult: TaintedString = recvLine(r.socket)
-      result = $taintedResult
-    else:
-      result = await recvLine(r.socket)
+    result = await recvLine(r.socket)
+
+  # recvLine returns "" only when the peer closed the connection; an empty
+  # protocol line would be returned as "\r\L". Raise here so callers can
+  # treat an empty result as the pipelining dummy.
+  if result.len == 0:
+    raiseRedisError(r, "Server closed connection prematurely")
 
 proc raiseInvalidReply(r: Redis | AsyncRedis, expected, got: char) =
   raiseReplyError(r,
@@ -1331,7 +1337,9 @@ proc shutdown*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
     if len(s) != 0:
       raiseRedisError(r, s)
   else:
-    let s = await managedRecvLine(r)
+    # Read the socket directly: an empty line (EOF) is the expected
+    # outcome of SHUTDOWN, not an error.
+    let s = await recvLine(r.socket)
     if len(s) != 0:
       raiseRedisError(r, s)
     finaliseCommand(r)
