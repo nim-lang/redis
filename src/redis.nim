@@ -187,6 +187,77 @@ proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if result.len == 0:
     raiseRedisError(r, "Server closed connection prematurely")
 
+type
+  RespKind = enum
+    ## Internal RESP reply classification, used to filter pipeline
+    ## results by type instead of by value. Not exported: the public API
+    ## keeps returning flat strings.
+    respStatus, respError, respInteger, respBulk, respNilBulk,
+    respNilArray, respArray
+
+  RespReply = object
+    kind: RespKind
+    value: string            # status/error/bulk text or rendered integer
+    elements: seq[RespReply] # respArray only
+
+proc readResp(r: Redis): RespReply {.gcsafe.}
+proc readResp(r: AsyncRedis): Future[RespReply] {.gcsafe.}
+proc readResp(r: Redis | AsyncRedis): Future[RespReply] {.multisync.} =
+  ## Read one complete reply, classifying it by its RESP type marker so
+  ## that status acknowledgments can be told apart from data replies
+  ## that happen to carry the same text.
+  let line = await r.managedRecvLine()
+  if line.len == 0:
+    raiseReplyError(r, "readResp called while pipelining is enabled")
+
+  case line[0]
+  of '+':
+    result = RespReply(kind: respStatus, value: line.substr(1))
+  of '-':
+    # Keep the full error line, matching the message parseStatus raises.
+    result = RespReply(kind: respError, value: strip(line))
+  of ':':
+    var num: BiggestInt
+    if parseBiggestInt(line, num, 1) == 0:
+      raiseReplyError(r, "Unable to parse integer.")
+    result = RespReply(kind: respInteger, value: $num)
+  of '$':
+    let numBytes = parseInt(line.substr(1))
+    if numBytes == -1:
+      result = RespReply(kind: respNilBulk)
+    else:
+      var s = await r.managedRecv(numBytes + 2)
+      s.setLen(numBytes)
+      result = RespReply(kind: respBulk, value: s)
+  of '*':
+    let numElems = parseInt(line.substr(1))
+    if numElems == -1:
+      result = RespReply(kind: respNilArray)
+    else:
+      result = RespReply(kind: respArray, elements: @[])
+      for _ in 1 .. numElems:
+        when r is Redis:
+          result.elements.add(r.readResp())
+        else:
+          result.elements.add(await r.readResp())
+  else:
+    raiseReplyError(r, "readResp failed on line: " & line)
+
+proc appendData(r: Redis | AsyncRedis, reply: RespReply, into: var RedisList) =
+  ## Flatten a reply into the legacy string list, dropping status
+  ## acknowledgments by type. Mirrors the historical flattening: nested
+  ## arrays are spliced into the parent, a nil bulk becomes redisNil, a
+  ## nil array contributes nothing, and error replies raise.
+  case reply.kind
+  of respStatus: discard
+  of respError: raiseRedisError(r, reply.value)
+  of respInteger, respBulk: into.add(reply.value)
+  of respNilBulk: into.add(redisNil)
+  of respNilArray: discard
+  of respArray:
+    for element in reply.elements:
+      appendData(r, element, into)
+
 proc raiseInvalidReply(r: Redis | AsyncRedis, expected, got: char) =
   raiseReplyError(r,
           "Expected '$1' at the beginning of a status reply got '$2'" %
@@ -368,12 +439,11 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
   var tot = r.pipeline.expected
 
   for i in 0..tot-1:
-    var ret = await r.readNext()
-    for item in ret:
-      # Filter out whole status replies only; a data value merely
-      # containing "OK" or "QUEUED" must be kept.
-      if not (item == "OK" or item == "QUEUED"):
-        result.add(item)
+    # Read each reply in typed form and filter status acknowledgments by
+    # their RESP type, so data replies whose text happens to be "OK" or
+    # "QUEUED" are preserved.
+    let reply = await r.readResp()
+    appendData(r, reply, result)
 
   r.pipeline.expected = 0
 
