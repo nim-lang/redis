@@ -107,6 +107,67 @@ template syncTests() =
     discard r.pfadd("redisTest:pfcount2", @["bar"])
     check r.pfcount(@["redisTest:pfcount1", "redisTest:pfcount2"]) == 2
 
+  test "flushPipeline preserves values containing OK or QUEUED":
+    # Regression test for https://github.com/nim-lang/redis/issues/48:
+    # pipeline results were filtered with contains("OK")/contains("QUEUED"),
+    # a substring match, so legitimate values were silently dropped and
+    # later results shifted position.
+    const
+      lookupKey = "redisTests:pipeline:lookup"
+      jobsKey = "redisTests:pipeline:jobs"
+      plainKey = "redisTests:pipeline:plain"
+
+    r.setk(lookupKey, "LOOKUP")
+    r.setk(jobsKey, "QUEUED_JOBS")
+    r.setk(plainKey, "plain")
+
+    r.startPipelining()
+    discard r.get(lookupKey)
+    discard r.get(jobsKey)
+    discard r.get(plainKey)
+    let res = r.flushPipeline()
+
+    check res == @["LOOKUP", "QUEUED_JOBS", "plain"]
+
+  test "flushPipeline preserves values equal to OK or QUEUED":
+    # Status acknowledgments are filtered by RESP reply type, so a data
+    # reply whose text is exactly "OK" or "QUEUED" must survive.
+    const
+      okKey = "redisTests:pipeline:okval"
+      queuedKey = "redisTests:pipeline:queuedval"
+
+    r.setk(okKey, "OK")
+    r.setk(queuedKey, "QUEUED")
+
+    r.startPipelining()
+    discard r.get(okKey)
+    discard r.get(queuedKey)
+    let res = r.flushPipeline()
+
+    check res == @["OK", "QUEUED"]
+
+  test "exec preserves values containing OK":
+    const brokenKey = "redisTests:multi:broken"
+
+    r.setk(brokenKey, "BROKEN")
+
+    r.multi()
+    discard r.get(brokenKey)
+    let res = r.exec()
+
+    check res == @["BROKEN"]
+
+  test "exec preserves values equal to OK":
+    const okKey = "redisTests:multi:okval"
+
+    r.setk(okKey, "OK")
+
+    r.multi()
+    discard r.get(okKey)
+    let res = r.exec()
+
+    check res == @["OK"]
+
   # TODO: Ideally tests for all other procedures, will add these in the future
 
   # delete all keys in the DB at the end of the tests
