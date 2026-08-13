@@ -107,6 +107,32 @@ template syncTests() =
     discard r.pfadd("redisTest:pfcount2", @["bar"])
     check r.pfcount(@["redisTest:pfcount1", "redisTest:pfcount2"]) == 2
 
+  test "flushPipeline preserves values containing OK or QUEUED":
+    # Regression test for https://github.com/nim-lang/redis/issues/48:
+    # pipeline results were filtered with contains("OK")/contains("QUEUED"),
+    # a substring match, so legitimate values were silently dropped and
+    # later results shifted position.
+    r.setk("redisTests:pipeline:lookup", "LOOKUP")
+    r.setk("redisTests:pipeline:jobs", "QUEUED_JOBS")
+    r.setk("redisTests:pipeline:plain", "plain")
+
+    r.startPipelining()
+    discard r.get("redisTests:pipeline:lookup")
+    discard r.get("redisTests:pipeline:jobs")
+    discard r.get("redisTests:pipeline:plain")
+    let res = r.flushPipeline()
+
+    check res == @["LOOKUP", "QUEUED_JOBS", "plain"]
+
+  test "exec preserves values containing OK":
+    r.setk("redisTests:multi:broken", "BROKEN")
+
+    r.multi()
+    discard r.get("redisTests:multi:broken")
+    let res = r.exec()
+
+    check res == @["BROKEN"]
+
   # TODO: Ideally tests for all other procedures, will add these in the future
 
   # delete all keys in the DB at the end of the tests

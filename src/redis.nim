@@ -370,8 +370,10 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
   for i in 0..tot-1:
     var ret = await r.readNext()
     for item in ret:
-     if not (item.contains("OK") or item.contains("QUEUED")):
-       result.add(item)
+      # Filter out whole status replies only; a data value merely
+      # containing "OK" or "QUEUED" must be kept.
+      if not (item == "OK" or item == "QUEUED"):
+        result.add(item)
 
   r.pipeline.expected = 0
 
