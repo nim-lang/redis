@@ -35,6 +35,8 @@
 ##    waitFor main()
 
 import std/net, asyncdispatch, asyncnet, os, strutils, parseutils, deques, options
+import ./redis/values
+export values
 
 const
   redisNil* = "\0\0"
@@ -257,6 +259,33 @@ proc appendData(r: Redis | AsyncRedis, reply: RespReply, into: var RedisList) =
     for element in reply.elements:
       appendData(r, element, into)
 
+proc toRedisValue*(reply: RespReply): RedisValue =
+  case reply.kind
+  of respStatus:
+    result = RedisValue(kind: vkStatus, strVal: reply.value)
+  of respError:
+    var msg = reply.value
+    if msg.len > 0 and msg[0] == '-':
+      msg = msg.substr(1).strip()
+    raise newException(RedisError, msg)
+  of respInteger:
+    result = RedisValue(kind: vkInteger, intVal: parseBiggestInt(reply.value))
+  of respBulk:
+    result = RedisValue(kind: vkString, strVal: reply.value)
+  of respNilBulk, respNilArray:
+    result = RedisValue(kind: vkNil)
+  of respArray:
+    result = RedisValue(kind: vkList, listVal: @[])
+    for elem in reply.elements:
+      result.listVal.add(toRedisValue(elem))
+
+proc readValue*(r: Redis | AsyncRedis): Future[RedisValue] {.multisync.} =
+  if r.pipeline.enabled:
+    return RedisValue(kind: vkStatus, strVal: "PIPELINED")
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  result = toRedisValue(reply)
+
 proc raiseInvalidReply(r: Redis | AsyncRedis, expected, got: char) =
   raiseReplyError(r,
           "Expected '$1' at the beginning of a status reply got '$2'" %
@@ -360,6 +389,8 @@ proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} 
 proc readNext(r: Redis): RedisList {.gcsafe.}
 proc readNext(r: AsyncRedis): Future[RedisList] {.gcsafe.}
 proc readArrayLines(r: Redis | AsyncRedis, countLine: string): Future[RedisList] {.multisync.} =
+  if countLine.len > 0 and countLine[0] == '-':
+    raiseRedisError(r, strip(countLine))
   if countLine[0] != '*':
     raiseInvalidReply(r, '*', countLine[0])
 
@@ -446,6 +477,40 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
 
   r.pipeline.expected = 0
 
+proc flushPipelineValues*(r: Redis | AsyncRedis, wasMulti = false): Future[seq[RedisValue]] {.multisync.} =
+  ## Send buffered commands, clear buffer, and return results as a sequence of RedisValue
+  ## preserving 1:1 positional integrity with queued commands.
+  if r.pipeline.buffer.len > 0:
+    await r.socket.send(r.pipeline.buffer)
+  r.pipeline.buffer = ""
+
+  r.pipeline.enabled = false
+  result = @[]
+
+  var tot = r.pipeline.expected
+
+  if wasMulti:
+    var execReply: RespReply
+    for i in 0 ..< tot:
+      let reply = await r.readResp()
+      if reply.kind == respError:
+        raiseRedisError(r, reply.value)
+      if i == tot - 1:
+        execReply = reply
+    r.pipeline.expected = 0
+    if execReply.kind == respArray:
+      for elem in execReply.elements:
+        result.add(elem.toRedisValue())
+    elif execReply.kind == respNilArray:
+      discard
+    elif execReply.kind != respError:
+      result.add(execReply.toRedisValue())
+  else:
+    for i in 0 ..< tot:
+      let reply = await r.readResp()
+      result.add(reply.toRedisValue())
+    r.pipeline.expected = 0
+
 proc startPipelining*(r: Redis | AsyncRedis) =
   ## Enable command pipelining (reduces network roundtrips).
   ## Note that when enabled, you must call flushPipeline to actually send commands, except
@@ -520,6 +585,22 @@ proc del*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisInteger] {.mult
   ## Delete a key or multiple keys
   await r.sendCommand("DEL", keys)
   result = await r.readInteger()
+
+proc del*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Delete a single key
+  await r.del(@[key])
+
+proc del*(r: Redis, keys: openArray[string]): RedisInteger =
+  ## Delete multiple keys
+  var kSeq: seq[string] = @[]
+  for k in keys: kSeq.add(k)
+  result = r.del(kSeq)
+
+proc del*(r: AsyncRedis, keys: openArray[string]): Future[RedisInteger] =
+  ## Delete multiple keys asynchronously
+  var kSeq: seq[string] = @[]
+  for k in keys: kSeq.add(k)
+  result = r.del(kSeq)
 
 proc exists*(r: Redis | AsyncRedis, key: string): Future[bool] {.multisync.} =
   ## Determine if a key exists
@@ -934,8 +1015,13 @@ proc sadd*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInte
   await r.sendCommand("SADD", key, @[member])
   result = await r.readInteger()
 
+proc sadd*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Add one or multiple members to a set
+  await r.sendCommand("SADD", key, members)
+  result = await r.readInteger()
+
 proc sladd*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
-  ## Add a member to a set
+  ## Add multiple members to a set
   await r.sendCommand("SADD", key, members)
   result = await r.readInteger()
 
@@ -995,6 +1081,16 @@ proc srandmember*(r: Redis | AsyncRedis, key: string): Future[RedisString] {.mul
 proc srem*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInteger] {.multisync.} =
   ## Remove a member from a set
   await r.sendCommand("SREM", key, @[member])
+  result = await r.readInteger()
+
+proc srem*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Remove one or multiple members from a set
+  await r.sendCommand("SREM", key, members)
+  result = await r.readInteger()
+
+proc slrem*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Remove multiple members from a set
+  await r.sendCommand("SREM", key, members)
   result = await r.readInteger()
 
 proc sunion*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisList] {.multisync.} =
@@ -1237,17 +1333,32 @@ proc subscribe*(r: AsyncRedis, channel: string) {.async.} =
   ## Listen for messages published to the given channel
   await r.sendCommand("SUBSCRIBE", @[channel])
   let commandback = await r.readNext()
+  finaliseCommand(r)
 
 proc subscribe*(r: AsyncRedis, channels: seq[string]) {.async.} =
   ## Listen for messages published to the given channels
   await r.sendCommand("SUBSCRIBE", channels)
   for c in channels:
     let commandback = await r.readNext()
+  finaliseCommand(r)
 
-# proc unsubscribe*(r: Redis, [channel: openarray[string], : string): ???? =
-#   ## Stop listening for messages posted to the given channels
-#   r.socket.send("UNSUBSCRIBE $# $#\c\L" % [[channel.join(), ])
-#   return ???
+proc unsubscribe*(r: AsyncRedis, channel: string) {.async.} =
+  ## Stop listening for messages posted to the given channel
+  await r.sendCommand("UNSUBSCRIBE", @[channel])
+  let commandback = await r.readNext()
+  finaliseCommand(r)
+
+proc unsubscribe*(r: AsyncRedis, channels: seq[string] = @[]) {.async.} =
+  ## Stop listening for messages posted to the given channels (or all channels if empty)
+  if channels.len == 0:
+    await r.sendCommand("UNSUBSCRIBE")
+    let commandback = await r.readNext()
+    finaliseCommand(r)
+  else:
+    await r.sendCommand("UNSUBSCRIBE", channels)
+    for c in channels:
+      let commandback = await r.readNext()
+    finaliseCommand(r)
 
 proc nextMessage*(r: AsyncRedis): Future[RedisMessage] {.async.} =
   let msg = await r.readNext()
@@ -1270,6 +1381,13 @@ proc exec*(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
   # Will reply with +OK for MULTI/EXEC and +QUEUED for every command
   # between, then with the results
   result = await r.flushPipeline(true)
+
+proc execValues*(r: Redis | AsyncRedis): Future[seq[RedisValue]] {.multisync.} =
+  ## Execute all commands issued after MULTI and return results as a sequence of RedisValue,
+  ## preserving 1:1 positional integrity with the queued commands.
+  await r.sendCommand("EXEC")
+  r.pipeline.enabled = false
+  result = await r.flushPipelineValues(true)
 
 proc multi*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Mark the start of a transaction block
@@ -1443,6 +1561,107 @@ proc hPairs*(r: AsyncRedis, key: string): Future[seq[tuple[key, value: string]]]
     else:
       result.add((k, i))
       k = ""
+
+# Scripting
+
+proc eval*(r: Redis | AsyncRedis, script: string, keys: seq[string] = @[], args: seq[string] = @[]): Future[RedisValue] {.multisync.} =
+  ## Execute a Lua script server-side using EVAL.
+  var cmdArgs: seq[string] = @[script, $keys.len]
+  for k in keys:
+    cmdArgs.add(k)
+  for a in args:
+    cmdArgs.add(a)
+  await r.sendCommand("EVAL", cmdArgs)
+  result = await r.readValue()
+
+proc evalSha*(r: Redis | AsyncRedis, sha: string, keys: seq[string] = @[], args: seq[string] = @[]): Future[RedisValue] {.multisync.} =
+  ## Execute a cached Lua script server-side using its SHA1 digest via EVALSHA.
+  var cmdArgs: seq[string] = @[sha, $keys.len]
+  for k in keys:
+    cmdArgs.add(k)
+  for a in args:
+    cmdArgs.add(a)
+  await r.sendCommand("EVALSHA", cmdArgs)
+  result = await r.readValue()
+
+proc evalInt*(r: Redis | AsyncRedis, script: string, keys: seq[string] = @[], args: seq[string] = @[]): Future[BiggestInt] {.multisync.} =
+  ## Convenience helper to execute a Lua script and return the result as an integer.
+  let val = await r.eval(script, keys, args)
+  result = val.toInt()
+
+proc evalString*(r: Redis | AsyncRedis, script: string, keys: seq[string] = @[], args: seq[string] = @[]): Future[string] {.multisync.} =
+  ## Convenience helper to execute a Lua script and return the result as a string.
+  let val = await r.eval(script, keys, args)
+  result = val.toStr()
+
+proc evalList*(r: Redis | AsyncRedis, script: string, keys: seq[string] = @[], args: seq[string] = @[]): Future[seq[RedisValue]] {.multisync.} =
+  ## Convenience helper to execute a Lua script and return the result as a list of RedisValues.
+  let val = await r.eval(script, keys, args)
+  result = val.toSeq()
+
+proc scriptLoad*(r: Redis | AsyncRedis, script: string): Future[string] {.multisync.} =
+  ## Load a script into the scripts cache without executing it. Returns the SHA1 digest.
+  await r.sendCommand("SCRIPT", @["LOAD", script])
+  result = await r.readBulkString()
+
+proc scriptExists*(r: Redis | AsyncRedis, shas: seq[string]): Future[seq[bool]] {.multisync.} =
+  ## Check existence of scripts in the script cache by their SHA1 digests.
+  if shas.len == 0:
+    return @[]
+  var args: seq[string] = @["EXISTS"]
+  for s in shas:
+    args.add(s)
+  await r.sendCommand("SCRIPT", args)
+  let rawList = await r.readArray()
+  result = @[]
+  for item in rawList:
+    result.add(item == "1")
+
+proc scriptExists*(r: Redis, shas: openArray[string]): seq[bool] =
+  ## Check existence of scripts in the script cache by their SHA1 digests.
+  var sSeq: seq[string] = @[]
+  for s in shas: sSeq.add(s)
+  result = r.scriptExists(sSeq)
+
+proc scriptExists*(r: AsyncRedis, shas: openArray[string]): Future[seq[bool]] =
+  ## Check existence of scripts in the script cache by their SHA1 digests.
+  var sSeq: seq[string] = @[]
+  for s in shas: sSeq.add(s)
+  result = r.scriptExists(sSeq)
+
+proc scriptFlush*(r: Redis | AsyncRedis, async = false): Future[RedisStatus] {.multisync.} =
+  ## Flush the Lua scripts cache.
+  if async:
+    await r.sendCommand("SCRIPT", @["FLUSH", "ASYNC"])
+  else:
+    await r.sendCommand("SCRIPT", @["FLUSH"])
+  result = await r.readStatus()
+
+proc scriptKill*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
+  ## Kill the currently executing Lua script.
+  await r.sendCommand("SCRIPT", @["KILL"])
+  result = await r.readStatus()
+
+# Raw command execution
+
+proc rawCommand*(r: Redis | AsyncRedis, cmd: string, args: seq[string]): Future[RedisValue] {.multisync.} =
+  ## Execute an arbitrary Redis command with arguments and return a dynamic RedisValue.
+  await r.sendCommand(cmd, args)
+  result = await r.readValue()
+
+proc rawCommand*(r: Redis, cmd: string, args: varargs[string]): RedisValue =
+  ## Execute an arbitrary Redis command with varargs arguments and return a dynamic RedisValue.
+  var argSeq: seq[string] = @[]
+  for a in args:
+    argSeq.add(a)
+  result = r.rawCommand(cmd, argSeq)
+
+proc rawCommand*(r: AsyncRedis, cmd: string, args: varargs[string]): Future[RedisValue] =
+  ## Execute an arbitrary Redis command with varargs arguments and return a dynamic RedisValue.
+  var argSeq: seq[string] = @[]
+  for a in args:
+    argSeq.add(a)
+  result = r.rawCommand(cmd, argSeq)
 
 type
   SendMode = enum
