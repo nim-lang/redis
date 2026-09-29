@@ -257,20 +257,25 @@ proc readResp(r: Redis | AsyncRedis): Future[RespReply] {.multisync.} =
   else:
     raiseReplyError(r, "readResp failed on line: " & line)
 
-proc appendData(r: Redis | AsyncRedis, reply: RespReply, into: var RedisList) =
+proc appendData(reply: RespReply, into: var RedisList,
+                firstError: var Option[string]) =
   ## Flatten a reply into the legacy string list, dropping status
   ## acknowledgments by type. Mirrors the historical flattening: nested
-  ## arrays are spliced into the parent, a nil bulk becomes redisNil, a
-  ## nil array contributes nothing, and error replies raise.
+  ## arrays are spliced into the parent, a nil bulk becomes redisNil, and
+  ## a nil array contributes nothing. An error reply does not raise here:
+  ## the first one goes to firstError, so that the caller can read the
+  ## remaining replies before it raises.
   case reply.kind
   of respStatus: discard
-  of respError: raiseRedisError(r, reply.value)
+  of respError:
+    if firstError.isNone:
+      firstError = some(reply.value)
   of respInteger, respBulk: into.add(reply.value)
   of respNilBulk: into.add(redisNil)
   of respNilArray: discard
   of respArray:
     for element in reply.elements:
-      appendData(r, element, into)
+      appendData(element, into, firstError)
 
 proc toRedisValue*(reply: RespReply): RedisValue =
   case reply.kind
@@ -481,14 +486,19 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
 
   var tot = r.pipeline.expected
 
+  # Raise for an error reply only after the last reply is read, so that
+  # the replies after an error do not stay on the connection, where the
+  # next command would read one of them as its own reply.
+  var firstError = none(string)
   for i in 0..tot-1:
-    # Read each reply in typed form and filter status acknowledgments by
-    # their RESP type, so data replies whose text happens to be "OK" or
-    # "QUEUED" are preserved.
-    let reply = await r.readResp()
-    appendData(r, reply, result)
+    # Filter status acknowledgments by their RESP type, so data replies
+    # whose text happens to be "OK" or "QUEUED" are preserved.
+    appendData(await r.readResp(), result, firstError)
 
   r.pipeline.expected = 0
+
+  if firstError.isSome:
+    raiseRedisError(r, firstError.get)
 
 proc flushPipelineValues*(r: Redis | AsyncRedis, wasMulti = false): Future[seq[RedisValue]] {.multisync.} =
   ## Send buffered commands, clear buffer, and return results as a sequence of RedisValue
