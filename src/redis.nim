@@ -90,6 +90,17 @@ proc newCursor*(pos: BiggestInt = 0): RedisCursor =
 proc `$`*(cursor: RedisCursor): string =
   result = $cursor.position
 
+# Only the Redis object that open returns holds the socket, and net has no
+# destructor that closes one, so a failed connect would leak the descriptor.
+# finally rather than except keeps the raises list of the caller exact.
+template closeOnError(socket: Socket, body: untyped) =
+  var connected = false
+  try:
+    body
+    connected = true
+  finally:
+    if not connected: socket.close()
+
 proc open*(host = "localhost", port = 6379.Port): Redis =
   ## Open a synchronous connection to a redis server.
   result = Redis(
@@ -97,7 +108,8 @@ proc open*(host = "localhost", port = 6379.Port): Redis =
     pipeline: newPipeline()
   )
 
-  result.socket.connect(host, port)
+  closeOnError(result.socket):
+    result.socket.connect(host, port)
 
 proc openUnix*(path = "/var/run/redis/redis.sock"): Redis =
   ## Open a synchronous unix connection to a redis server.
@@ -106,7 +118,8 @@ proc openUnix*(path = "/var/run/redis/redis.sock"): Redis =
     pipeline: newPipeline()
   )
 
-  result.socket.connectUnix(path)
+  closeOnError(result.socket):
+    result.socket.connectUnix(path)
 
 proc openAsync*(host = "localhost", port = 6379.Port): Future[AsyncRedis] {.async.} =
   ## Open an asynchronous connection to a redis server.
