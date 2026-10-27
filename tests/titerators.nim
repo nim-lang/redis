@@ -122,6 +122,20 @@ suite "Redis Modern Hash and Sorted Set Verbs (Sync)":
       let unionRes = r.zunion(@["test:zset:z1", "test:zset:z2"])
       check unionRes.len == 3
 
+
+  test "zdiff and zinter with >= 10 keys openArray framing":
+    let r = getClient()
+    var baseKeys: seq[string] = @[]
+    for i in 1 .. 12:
+      let k = "test:zset:k" & $i
+      baseKeys.add(k)
+      discard r.zadd(k, 1, "elem")
+    let diffRes = r.zdiff(baseKeys)
+    check diffRes.len == 0 or diffRes.len == 1
+    let interRes = r.zinter(baseKeys)
+    check interRes.len == 1
+    r.quit()
+
   test "zrem multi-member":
     discard r.del(@["test:zset:rem"])
     discard r.zadd("test:zset:rem", 1, "a")
@@ -254,3 +268,4 @@ suite "Redis Scanning & Collectors (Async)":
     await r.quit()
 
   waitFor mainAsync()
+

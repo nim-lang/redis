@@ -17,7 +17,7 @@
 ## Example
 ## --------
 ##
-## .. code-block::nim
+## .. code-block:: nim
 ##    import redis, asyncdispatch
 ##
 ##    proc main() {.async.} =
@@ -1573,13 +1573,15 @@ proc zdiff*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false):
   result = await r.readArray()
 
 proc zdiff*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
+  ## Return the difference between multiple sorted sets (zero allocation).
+  let numKeysStr = $keys.len
+  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
   var request = "*"
-  let numArgs = 1 + keys.len + (if withScores: 1 else: 0)
-  request.addInt(1 + numArgs)
+  request.addInt(totalArgs)
   request.add("\r\n$5\r\nZDIFF\r\n$")
-  request.addInt(keys.len)
+  request.addInt(numKeysStr.len)
   request.add("\r\n")
-  request.addInt(keys.len)
+  request.add(numKeysStr)
   request.add("\r\n")
   for k in keys:
     request.add("$")
@@ -1609,16 +1611,19 @@ proc zdiffstore*(r: Redis | AsyncRedis, destination: string, keys: seq[string]):
   result = await r.readInteger()
 
 proc zdiffstore*(r: Redis, destination: string, keys: openArray[string]): RedisInteger =
+  ## Store the difference between multiple sorted sets in a destination key (zero allocation).
+  let numKeysStr = $keys.len
+  let totalArgs = 3 + keys.len
   var request = "*"
-  request.addInt(3 + keys.len)
+  request.addInt(totalArgs)
   request.add("\r\n$10\r\nZDIFFSTORE\r\n$")
   request.addInt(destination.len)
   request.add("\r\n")
   request.add(destination)
   request.add("\r\n$")
-  request.addInt(keys.len)
+  request.addInt(numKeysStr.len)
   request.add("\r\n")
-  request.addInt(keys.len)
+  request.add(numKeysStr)
   request.add("\r\n")
   for k in keys:
     request.add("$")
@@ -1647,13 +1652,15 @@ proc zinter*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false)
   result = await r.readArray()
 
 proc zinter*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
+  ## Return the intersection of multiple sorted sets (zero allocation).
+  let numKeysStr = $keys.len
+  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
   var request = "*"
-  let numArgs = 1 + keys.len + (if withScores: 1 else: 0)
-  request.addInt(1 + numArgs)
+  request.addInt(totalArgs)
   request.add("\r\n$6\r\nZINTER\r\n$")
-  request.addInt(keys.len)
+  request.addInt(numKeysStr.len)
   request.add("\r\n")
-  request.addInt(keys.len)
+  request.add(numKeysStr)
   request.add("\r\n")
   for k in keys:
     request.add("$")
@@ -1684,13 +1691,15 @@ proc zunion*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false)
   result = await r.readArray()
 
 proc zunion*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
+  ## Return the union of multiple sorted sets (zero allocation).
+  let numKeysStr = $keys.len
+  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
   var request = "*"
-  let numArgs = 1 + keys.len + (if withScores: 1 else: 0)
-  request.addInt(1 + numArgs)
+  request.addInt(totalArgs)
   request.add("\r\n$6\r\nZUNION\r\n$")
-  request.addInt(keys.len)
+  request.addInt(numKeysStr.len)
   request.add("\r\n")
-  request.addInt(keys.len)
+  request.add(numKeysStr)
   request.add("\r\n")
   for k in keys:
     request.add("$")
