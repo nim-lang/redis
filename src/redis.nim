@@ -489,26 +489,27 @@ proc flushPipelineValues*(r: Redis | AsyncRedis, wasMulti = false): Future[seq[R
 
   var tot = r.pipeline.expected
 
-  if wasMulti:
-    var execReply: RespReply
-    for i in 0 ..< tot:
-      let reply = await r.readResp()
-      if reply.kind == respError:
-        raiseRedisError(r, reply.value)
-      if i == tot - 1:
-        execReply = reply
-    r.pipeline.expected = 0
-    if execReply.kind == respArray:
-      for elem in execReply.elements:
-        result.add(elem.toRedisValue())
-    elif execReply.kind == respNilArray:
-      discard
-    elif execReply.kind != respError:
-      result.add(execReply.toRedisValue())
-  else:
-    for i in 0 ..< tot:
-      let reply = await r.readResp()
-      result.add(reply.toRedisValue())
+  try:
+    if wasMulti:
+      var execReply: RespReply
+      for i in 0 ..< tot:
+        let reply = await r.readResp()
+        if reply.kind == respError:
+          raiseRedisError(r, reply.value)
+        if i == tot - 1:
+          execReply = reply
+      if execReply.kind == respArray:
+        for elem in execReply.elements:
+          result.add(elem.toRedisValue())
+      elif execReply.kind == respNilArray:
+        discard
+      elif execReply.kind != respError:
+        result.add(execReply.toRedisValue())
+    else:
+      for i in 0 ..< tot:
+        let reply = await r.readResp()
+        result.add(reply.toRedisValue())
+  finally:
     r.pipeline.expected = 0
 
 proc startPipelining*(r: Redis | AsyncRedis) =
@@ -591,10 +592,22 @@ proc del*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.
   await r.del(@[key])
 
 proc del*(r: Redis, keys: openArray[string]): RedisInteger =
-  ## Delete multiple keys
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.del(kSeq)
+  ## Delete multiple keys (zero-allocation builder)
+  var request = "*"
+  request.addInt(1 + keys.len)
+  request.add("\r\n$3\r\nDEL\r\n")
+  for k in keys:
+    request.add("$")
+    request.addInt(k.len)
+    request.add("\r\n")
+    request.add(k)
+    request.add("\r\n")
+  if r.pipeline.enabled:
+    r.pipeline.buffer.add(request)
+    r.pipeline.expected += 1
+  else:
+    r.managedSend(request)
+  result = r.readInteger()
 
 proc del*(r: AsyncRedis, keys: openArray[string]): Future[RedisInteger] =
   ## Delete multiple keys asynchronously
@@ -1332,32 +1345,32 @@ proc publish*(r: Redis | AsyncRedis, channel: string, message: string): Future[R
 proc subscribe*(r: AsyncRedis, channel: string) {.async.} =
   ## Listen for messages published to the given channel
   await r.sendCommand("SUBSCRIBE", @[channel])
-  let commandback = await r.readNext()
+  discard await r.readNext()
   finaliseCommand(r)
 
 proc subscribe*(r: AsyncRedis, channels: seq[string]) {.async.} =
   ## Listen for messages published to the given channels
   await r.sendCommand("SUBSCRIBE", channels)
-  for c in channels:
-    let commandback = await r.readNext()
+  for _ in channels:
+    discard await r.readNext()
   finaliseCommand(r)
 
 proc unsubscribe*(r: AsyncRedis, channel: string) {.async.} =
   ## Stop listening for messages posted to the given channel
   await r.sendCommand("UNSUBSCRIBE", @[channel])
-  let commandback = await r.readNext()
+  discard await r.readNext()
   finaliseCommand(r)
 
 proc unsubscribe*(r: AsyncRedis, channels: seq[string] = @[]) {.async.} =
   ## Stop listening for messages posted to the given channels (or all channels if empty)
   if channels.len == 0:
     await r.sendCommand("UNSUBSCRIBE")
-    let commandback = await r.readNext()
+    discard await r.readNext()
     finaliseCommand(r)
   else:
     await r.sendCommand("UNSUBSCRIBE", channels)
-    for c in channels:
-      let commandback = await r.readNext()
+    for _ in channels:
+      discard await r.readNext()
     finaliseCommand(r)
 
 proc nextMessage*(r: AsyncRedis): Future[RedisMessage] {.async.} =
