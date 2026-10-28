@@ -2235,63 +2235,6 @@ iterator zscan*(r: Redis, key: string, pattern = "*", count = 10): tuple[member:
     for e in batch.entries:
       yield e
 
-# Async collectors
-proc scanAll*(r: AsyncRedis, pattern = "*", count = 100, keyType = ""): Future[seq[string]] {.async.} =
-  ## Collect all matching keys using asynchronous SCAN pagination.
-  ##
-  ## **WARNING:** Buffers the entire matching keyspace into memory.
-  ## For very large datasets, use cursor-based `scan(cursor)` pagination instead.
-  var cursor = 0
-  var first = true
-  result = @[]
-  while first or cursor != 0:
-    first = false
-    let batch = await r.scan(cursor, pattern, count, keyType)
-    cursor = batch.cursor
-    result.add(batch.keys)
-
-proc hscanAll*(r: AsyncRedis, key: string, pattern = "*", count = 100): Future[seq[tuple[field, value: string]]] {.async.} =
-  ## Collect all field-value pairs using asynchronous HSCAN pagination.
-  ##
-  ## **WARNING:** Buffers the entire hash into memory.
-  ## For very large hashes, use cursor-based `hscan(key, cursor)` pagination instead.
-  var cursor = 0
-  var first = true
-  result = @[]
-  while first or cursor != 0:
-    first = false
-    let batch = await r.hscan(key, cursor, pattern, count)
-    cursor = batch.cursor
-    result.add(batch.pairs)
-
-proc sscanAll*(r: AsyncRedis, key: string, pattern = "*", count = 100): Future[seq[string]] {.async.} =
-  ## Collect all set members using asynchronous SSCAN pagination.
-  ##
-  ## **WARNING:** Buffers the entire set into memory.
-  ## For very large sets, use cursor-based `sscan(key, cursor)` pagination instead.
-  var cursor = 0
-  var first = true
-  result = @[]
-  while first or cursor != 0:
-    first = false
-    let batch = await r.sscan(key, cursor, pattern, count)
-    cursor = batch.cursor
-    result.add(batch.members)
-
-proc zscanAll*(r: AsyncRedis, key: string, pattern = "*", count = 100): Future[seq[tuple[member: string, score: float]]] {.async.} =
-  ## Collect all sorted set member-score pairs using asynchronous ZSCAN pagination.
-  ##
-  ## **WARNING:** Buffers the entire sorted set into memory.
-  ## For very large sets, use cursor-based `zscan(key, cursor)` pagination instead.
-  var cursor = 0
-  var first = true
-  result = @[]
-  while first or cursor != 0:
-    first = false
-    let batch = await r.zscan(key, cursor, pattern, count)
-    cursor = batch.cursor
-    result.add(batch.entries)
-
 type
   SendMode = enum
     normal, pipelined, multiple

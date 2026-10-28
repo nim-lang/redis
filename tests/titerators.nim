@@ -226,38 +226,62 @@ suite "Redis Cursor Scanning & Native Iterators (Sync)":
 
   r.quit()
 
-suite "Redis Scanning & Collectors (Async)":
+suite "Redis Scanning (Async)":
   proc mainAsync() {.async.} =
     let r = await getAsyncClient()
     discard await r.flushdb()
 
-    # Async scanAll
+    # Async cursor pagination via scan
     for i in 1..20:
       await r.setk("test:async:scan:k" & $i, "v" & $i)
-    let keys = await r.scanAll("test:async:scan:k*", count = 5)
-    check keys.len == 20
+    var scanCursor = 0
+    var scannedKeys: seq[string] = @[]
+    while true:
+      let (nextCur, keys) = await r.scan(scanCursor, "test:async:scan:k*", count = 5)
+      scannedKeys.add(keys)
+      if nextCur == 0: break
+      scanCursor = nextCur
+    check scannedKeys.len == 20
 
-    # Async hscanAll
+    # Async cursor pagination via hscan
     var hpairs: seq[(string, string)] = @[]
     for i in 1..15:
       hpairs.add(("f" & $i, "v" & $i))
     discard await r.hSet("test:async:hscan", hpairs)
-    let hres = await r.hscanAll("test:async:hscan", count = 5)
-    check hres.len == 15
+    var hCursor = 0
+    var hscannedPairs: seq[tuple[field, value: string]] = @[]
+    while true:
+      let (nextCur, pairs) = await r.hscan("test:async:hscan", hCursor, count = 5)
+      hscannedPairs.add(pairs)
+      if nextCur == 0: break
+      hCursor = nextCur
+    check hscannedPairs.len == 15
 
-    # Async sscanAll
+    # Async cursor pagination via sscan
     var smembers: seq[string] = @[]
     for i in 1..15:
       smembers.add("m" & $i)
     discard await r.sadd("test:async:sscan", smembers)
-    let sres = await r.sscanAll("test:async:sscan", count = 5)
-    check sres.len == 15
+    var sCursor = 0
+    var sscannedMembers: seq[string] = @[]
+    while true:
+      let (nextCur, members) = await r.sscan("test:async:sscan", sCursor, count = 5)
+      sscannedMembers.add(members)
+      if nextCur == 0: break
+      sCursor = nextCur
+    check sscannedMembers.len == 15
 
-    # Async zscanAll
+    # Async cursor pagination via zscan
     for i in 1..15:
       discard await r.zadd("test:async:zscan", i, "e" & $i)
-    let zres = await r.zscanAll("test:async:zscan", count = 5)
-    check zres.len == 15
+    var zCursor = 0
+    var zscannedEntries: seq[tuple[member: string, score: float]] = @[]
+    while true:
+      let (nextCur, entries) = await r.zscan("test:async:zscan", zCursor, count = 5)
+      zscannedEntries.add(entries)
+      if nextCur == 0: break
+      zCursor = nextCur
+    check zscannedEntries.len == 15
 
     # Async hPairs with empty key
     discard await r.del(@["test:async:emptykey"])
