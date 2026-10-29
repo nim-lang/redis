@@ -710,29 +710,6 @@ proc unlink*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisy
   await r.sendCommand("UNLINK", @[key])
   result = await r.readInteger()
 
-proc unlink*(r: Redis, keys: openArray[string]): RedisInteger =
-  ## Delete multiple keys asynchronously in a background thread.
-  var request = "*"
-  request.addInt(1 + keys.len)
-  request.add("\r\n$6\r\nUNLINK\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readInteger()
-
-proc unlink*(r: AsyncRedis, keys: openArray[string]): Future[RedisInteger] =
-  ## Delete multiple keys asynchronously in a background thread.
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.unlink(kSeq)
 
 proc touch*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisInteger] {.multisync.} =
   ## Alters the last access time of a key(s). Returns the number of keys that were touched.
@@ -744,29 +721,6 @@ proc touch*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisyn
   await r.sendCommand("TOUCH", @[key])
   result = await r.readInteger()
 
-proc touch*(r: Redis, keys: openArray[string]): RedisInteger =
-  ## Alters the last access time of multiple keys. Returns the number of keys that were touched.
-  var request = "*"
-  request.addInt(1 + keys.len)
-  request.add("\r\n$5\r\nTOUCH\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readInteger()
-
-proc touch*(r: AsyncRedis, keys: openArray[string]): Future[RedisInteger] =
-  ## Alters the last access time of multiple keys. Returns the number of keys that were touched.
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.touch(kSeq)
 
 proc copy*(r: Redis | AsyncRedis, src, dst: string, db: int = -1, replace: bool = false): Future[bool] {.multisync.} =
   ## Copy a key to another key. Returns true if the key was copied.
@@ -951,13 +905,6 @@ proc msetnx*(r: Redis | AsyncRedis, pairs: seq[(string, string)]): Future[bool] 
   await r.sendCommand("MSETNX", args)
   result = (await r.readInteger()) == 1
 
-proc msetnx*(r: Redis, pairs: openArray[(string, string)]): bool =
-  var s = @pairs
-  result = r.msetnx(s)
-
-proc msetnx*(r: AsyncRedis, pairs: openArray[(string, string)]): Future[bool] =
-  var s = @pairs
-  result = r.msetnx(s)
 
 proc incrByFloat*(r: Redis | AsyncRedis, key: string, increment: float): Future[float] {.multisync.} =
   ## Increment the float value of a key by the given amount.
@@ -1045,13 +992,6 @@ proc hSet*(r: Redis | AsyncRedis, key: string, pairs: seq[(string, string)]): Fu
   await r.sendCommand("HSET", key, args)
   result = await r.readInteger()
 
-proc hSet*(r: Redis, key: string, pairs: openArray[(string, string)]): RedisInteger =
-  var s = @pairs
-  result = r.hSet(key, s)
-
-proc hSet*(r: AsyncRedis, key: string, pairs: openArray[(string, string)]): Future[RedisInteger] =
-  var s = @pairs
-  result = r.hSet(key, s)
 
 proc hRandField*(r: Redis | AsyncRedis, key: string, count: int = 1, withValues: bool = false): Future[seq[string]] {.multisync.} =
   ## Get one or multiple random fields from a hash (Redis 6.2+)
@@ -1572,76 +1512,12 @@ proc zdiff*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false):
   await r.sendCommand("ZDIFF", args)
   result = await r.readArray()
 
-proc zdiff*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
-  ## Return the difference between multiple sorted sets (zero allocation).
-  let numKeysStr = $keys.len
-  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
-  var request = "*"
-  request.addInt(totalArgs)
-  request.add("\r\n$5\r\nZDIFF\r\n$")
-  request.addInt(numKeysStr.len)
-  request.add("\r\n")
-  request.add(numKeysStr)
-  request.add("\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if withScores:
-    request.add("$10\r\nWITHSCORES\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readArray()
-
-proc zdiff*(r: AsyncRedis, keys: openArray[string], withScores: bool = false): Future[RedisList] =
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.zdiff(kSeq, withScores)
-
 proc zdiffstore*(r: Redis | AsyncRedis, destination: string, keys: seq[string]): Future[RedisInteger] {.multisync.} =
   ## Store the difference between multiple sorted sets in a destination key (Redis 6.2+)
   var args: seq[string] = @[destination, $keys.len]
   for k in keys: args.add(k)
   await r.sendCommand("ZDIFFSTORE", args)
   result = await r.readInteger()
-
-proc zdiffstore*(r: Redis, destination: string, keys: openArray[string]): RedisInteger =
-  ## Store the difference between multiple sorted sets in a destination key (zero allocation).
-  let numKeysStr = $keys.len
-  let totalArgs = 3 + keys.len
-  var request = "*"
-  request.addInt(totalArgs)
-  request.add("\r\n$10\r\nZDIFFSTORE\r\n$")
-  request.addInt(destination.len)
-  request.add("\r\n")
-  request.add(destination)
-  request.add("\r\n$")
-  request.addInt(numKeysStr.len)
-  request.add("\r\n")
-  request.add(numKeysStr)
-  request.add("\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readInteger()
-
-proc zdiffstore*(r: AsyncRedis, destination: string, keys: openArray[string]): Future[RedisInteger] =
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.zdiffstore(destination, kSeq)
 
 proc zinter*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false): Future[RedisList] {.multisync.} =
   ## Return the intersection of multiple sorted sets (Redis 6.2+)
@@ -1651,37 +1527,6 @@ proc zinter*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false)
   await r.sendCommand("ZINTER", args)
   result = await r.readArray()
 
-proc zinter*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
-  ## Return the intersection of multiple sorted sets (zero allocation).
-  let numKeysStr = $keys.len
-  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
-  var request = "*"
-  request.addInt(totalArgs)
-  request.add("\r\n$6\r\nZINTER\r\n$")
-  request.addInt(numKeysStr.len)
-  request.add("\r\n")
-  request.add(numKeysStr)
-  request.add("\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if withScores:
-    request.add("$10\r\nWITHSCORES\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readArray()
-
-proc zinter*(r: AsyncRedis, keys: openArray[string], withScores: bool = false): Future[RedisList] =
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.zinter(kSeq, withScores)
-
 proc zunion*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false): Future[RedisList] {.multisync.} =
   ## Return the union of multiple sorted sets (Redis 6.2+)
   var args: seq[string] = @[$keys.len]
@@ -1689,37 +1534,6 @@ proc zunion*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false)
   if withScores: args.add("WITHSCORES")
   await r.sendCommand("ZUNION", args)
   result = await r.readArray()
-
-proc zunion*(r: Redis, keys: openArray[string], withScores: bool = false): RedisList =
-  ## Return the union of multiple sorted sets (zero allocation).
-  let numKeysStr = $keys.len
-  let totalArgs = 2 + keys.len + (if withScores: 1 else: 0)
-  var request = "*"
-  request.addInt(totalArgs)
-  request.add("\r\n$6\r\nZUNION\r\n$")
-  request.addInt(numKeysStr.len)
-  request.add("\r\n")
-  request.add(numKeysStr)
-  request.add("\r\n")
-  for k in keys:
-    request.add("$")
-    request.addInt(k.len)
-    request.add("\r\n")
-    request.add(k)
-    request.add("\r\n")
-  if withScores:
-    request.add("$10\r\nWITHSCORES\r\n")
-  if r.pipeline.enabled:
-    r.pipeline.buffer.add(request)
-    r.pipeline.expected += 1
-  else:
-    r.managedSend(request)
-  result = r.readArray()
-
-proc zunion*(r: AsyncRedis, keys: openArray[string], withScores: bool = false): Future[RedisList] =
-  var kSeq: seq[string] = @[]
-  for k in keys: kSeq.add(k)
-  result = r.zunion(kSeq, withScores)
 
 # HyperLogLog
 

@@ -31,7 +31,7 @@ suite "Redis Modern Hash and Sorted Set Verbs (Sync)":
 
   test "hSet multi-pair and hDel multi-field":
     discard r.del(@["test:hash:multi"])
-    let added = r.hSet("test:hash:multi", [("f1", "v1"), ("f2", "v2"), ("f3", "v3")])
+    let added = r.hSet("test:hash:multi", @[("f1", "v1"), ("f2", "v2"), ("f3", "v3")])
     check added == 3
     check r.hGet("test:hash:multi", "f1") == "v1"
     check r.hGet("test:hash:multi", "f2") == "v2"
@@ -49,7 +49,7 @@ suite "Redis Modern Hash and Sorted Set Verbs (Sync)":
 
   test "hRandField (Redis 6.2+)":
     discard r.del(@["test:hash:rand"])
-    discard r.hSet("test:hash:rand", [("a", "1"), ("b", "2"), ("c", "3")])
+    discard r.hSet("test:hash:rand", @[("a", "1"), ("b", "2"), ("c", "3")])
     r.xfailBefore(6, 2):
       let fields = r.hRandField("test:hash:rand", 2)
       check fields.len == 2

@@ -40,7 +40,7 @@ suite "Redis Modern Verbs (Sync)":
     check r.exists("test:unlink:2") == false
 
     # openArray array literal overload
-    check r.unlink(["test:unlink:3", "test:unlink:nonexistent"]) == 1
+    check r.unlink(@["test:unlink:3", "test:unlink:nonexistent"]) == 1
     check r.exists("test:unlink:3") == false
 
   test "touch updates access time":
@@ -49,7 +49,7 @@ suite "Redis Modern Verbs (Sync)":
     check r.touch("test:touch:nonexistent") == 0
     check r.touch(@["test:touch:1", "test:touch:nonexistent"]) == 1
     # openArray array literal overload
-    check r.touch(["test:touch:1", "test:touch:nonexistent"]) == 1
+    check r.touch(@["test:touch:1", "test:touch:nonexistent"]) == 1
 
   test "copy copies key value (Redis 6.2+)":
     r.setk("test:copy:src", "copied_val")
@@ -90,12 +90,12 @@ suite "Redis Modern Verbs (Sync)":
       check r.ttl("test:getex:1") > 0
 
   test "msetnx sets multiple keys only if none exist":
-    let ok = r.msetnx([("test:msetnx:a", "1"), ("test:msetnx:b", "2")])
+    let ok = r.msetnx(@[("test:msetnx:a", "1"), ("test:msetnx:b", "2")])
     check ok == true
     check r.get("test:msetnx:a") == "1"
     check r.get("test:msetnx:b") == "2"
 
-    let fail = r.msetnx([("test:msetnx:a", "new1"), ("test:msetnx:c", "3")])
+    let fail = r.msetnx(@[("test:msetnx:a", "new1"), ("test:msetnx:c", "3")])
     check fail == false
     check r.exists("test:msetnx:c") == false
 
@@ -125,13 +125,13 @@ suite "Redis Modern Verbs (Async)":
     await r.setk("test:async:unlink", "val")
     check (await r.unlink("test:async:unlink")) == 1
     await r.setk("test:async:unlink:arr", "val")
-    check (await r.unlink(["test:async:unlink:arr"])) == 1
+    check (await r.unlink("test:async:unlink:arr")) == 1
 
     # Async touch
     await r.setk("test:async:touch", "val")
     check (await r.touch("test:async:touch")) == 1
     await r.setk("test:async:touch:arr", "val")
-    check (await r.touch(["test:async:touch:arr"])) == 1
+    check (await r.touch("test:async:touch:arr")) == 1
 
     # Async keyType
     await r.setk("test:async:type", "val")
