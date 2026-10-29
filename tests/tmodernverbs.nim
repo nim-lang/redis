@@ -39,7 +39,6 @@ suite "Redis Modern Verbs (Sync)":
     check r.unlink(@["test:unlink:2", "test:unlink:nonexistent"]) == 1
     check r.exists("test:unlink:2") == false
 
-    # openArray array literal overload
     check r.unlink(@["test:unlink:3", "test:unlink:nonexistent"]) == 1
     check r.exists("test:unlink:3") == false
 
@@ -47,8 +46,6 @@ suite "Redis Modern Verbs (Sync)":
     r.setk("test:touch:1", "val1")
     check r.touch("test:touch:1") == 1
     check r.touch("test:touch:nonexistent") == 0
-    check r.touch(@["test:touch:1", "test:touch:nonexistent"]) == 1
-    # openArray array literal overload
     check r.touch(@["test:touch:1", "test:touch:nonexistent"]) == 1
 
   test "copy copies key value (Redis 6.2+)":

@@ -123,7 +123,7 @@ suite "Redis Modern Hash and Sorted Set Verbs (Sync)":
       check unionRes.len == 3
 
 
-  test "zdiff and zinter with >= 10 keys openArray framing":
+  test "zdiff and zinter with >= 10 keys multi-bulk framing":
     let r = getClient()
     r.xfailBefore(6, 2):
       var baseKeys: seq[string] = @[]
