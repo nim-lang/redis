@@ -74,7 +74,6 @@ type
     message*: string
   RedisError* = object of IOError ## Base error in redis
   ReplyError* = object of RedisError ## Invalid reply from redis
-  RedisProtocolError* = object of ReplyError ## Protocol framing or serialization error
   RedisConnectionError* = object of RedisError ## Connection establishment or socket drop error
   RedisTimeoutError* = object of RedisConnectionError ## Connection or socket action timeout
   RedisResponseError* = object of RedisError ## Server error reply (e.g. -ERR, -WRONGTYPE)
@@ -126,132 +125,6 @@ proc `[]`*(entry: StreamEntry, field: string): string {.inline.} =
 proc contains*(entry: StreamEntry, field: string): bool {.inline.} =
   ## Check if a field exists in a StreamEntry using the `in` operator.
   entry.hasField(field)
-
-proc auth*(r: Redis, password: string) {.gcsafe.}
-proc auth*(r: AsyncRedis, password: string): Future[void] {.gcsafe.}
-proc auth*(r: Redis, username, password: string) {.gcsafe.}
-proc auth*(r: AsyncRedis, username, password: string): Future[void] {.gcsafe.}
-proc select*(r: Redis, index: int): RedisStatus {.gcsafe.}
-proc select*(r: AsyncRedis, index: int): Future[RedisStatus] {.gcsafe.}
-
-# Only the Redis object that open returns holds the socket, and net has no
-# destructor that closes one, so a failed connect would leak the descriptor.
-template closeOnError(socket: net.Socket, body: untyped) =
-  var connected = false
-  try:
-    body
-    connected = true
-  finally:
-    if not connected: socket.close()
-
-proc open*(host = "localhost", port = 6379.Port,
-           password = "", username = "", db = 0,
-           connectTimeoutMs = -1, readTimeoutMs = -1): Redis {.gcsafe.} =
-  ## Open a synchronous connection to a redis server.
-  result = Redis(
-    socket: newSocket(buffered = true),
-    pipeline: newPipeline(),
-    connected: false,
-    readTimeoutMs: readTimeoutMs
-  )
-
-  closeOnError(result.socket):
-    if connectTimeoutMs > 0:
-      try:
-        result.socket.connect(host, port, timeout = connectTimeoutMs)
-      except net.TimeoutError:
-        raise newException(RedisTimeoutError, "Connection to " & host & ":" & $port.int & " timed out after " & $connectTimeoutMs & "ms")
-    else:
-      result.socket.connect(host, port)
-
-  result.connected = true
-
-  if username.len > 0:
-    result.auth(username, password)
-  elif password.len > 0:
-    result.auth(password)
-  if db != 0:
-    discard result.select(db)
-
-proc openUnix*(path = "/var/run/redis/redis.sock",
-               password = "", username = "", db = 0,
-               connectTimeoutMs = -1, readTimeoutMs = -1): Redis {.gcsafe.} =
-  ## Open a synchronous unix connection to a redis server.
-  when defined(posix):
-    result = Redis(
-      socket: newSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
-      pipeline: newPipeline(),
-      connected: false,
-      readTimeoutMs: readTimeoutMs
-    )
-    closeOnError(result.socket):
-      result.socket.connectUnix(path)
-    result.connected = true
-    if username.len > 0:
-      result.auth(username, password)
-    elif password.len > 0:
-      result.auth(password)
-    if db != 0:
-      discard result.select(db)
-  else:
-    raise newException(RedisError, "Unix domain sockets are not supported on this platform")
-
-proc openAsync*(host = "localhost", port = 6379.Port,
-                password = "", username = "", db = 0,
-                connectTimeoutMs = -1, readTimeoutMs = -1): Future[AsyncRedis] {.async.} =
-  ## Open an asynchronous connection to a redis server.
-  result = AsyncRedis(
-    socket: newAsyncSocket(buffered = true),
-    pipeline: newPipeline(),
-    sendQueue: initDeque[Future[void]](),
-    connected: false,
-    readTimeoutMs: readTimeoutMs
-  )
-
-  if connectTimeoutMs > 0:
-    let connectFut = result.socket.connect(host, port)
-    if not await withTimeout(connectFut, connectTimeoutMs):
-      result.connected = false
-      try: result.socket.close() except CatchableError: discard
-      raise newException(RedisTimeoutError, "Connection to " & host & ":" & $port.int & " timed out after " & $connectTimeoutMs & "ms")
-    if connectFut.failed:
-      result.connected = false
-      try: result.socket.close() except CatchableError: discard
-      raise connectFut.readError()
-  else:
-    await result.socket.connect(host, port)
-
-  result.connected = true
-
-  if username.len > 0:
-    await result.auth(username, password)
-  elif password.len > 0:
-    await result.auth(password)
-  if db != 0:
-    discard await result.select(db)
-
-proc openUnixAsync*(path = "/var/run/redis/redis.sock",
-                    password = "", username = "", db = 0,
-                    connectTimeoutMs = -1, readTimeoutMs = -1): Future[AsyncRedis] {.async.} =
-  ## Open an asynchronous unix connection to a redis server.
-  when defined(posix):
-    result = AsyncRedis(
-      socket: newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
-      pipeline: newPipeline(),
-      sendQueue: initDeque[Future[void]](),
-      connected: false,
-      readTimeoutMs: readTimeoutMs
-    )
-    await result.socket.connectUnix(path)
-    result.connected = true
-    if username.len > 0:
-      await result.auth(username, password)
-    elif password.len > 0:
-      await result.auth(password)
-    if db != 0:
-      discard await result.select(db)
-  else:
-    raise newException(RedisError, "Unix domain sockets are not supported on this platform")
 
 proc finaliseCommand(r: Redis | AsyncRedis) =
   when r is AsyncRedis:
@@ -2139,6 +2012,126 @@ proc reconnectUnix*(r: AsyncRedis, path = "/var/run/redis/redis.sock",
       await r.auth(password)
     if db != 0:
       discard await r.select(db)
+  else:
+    raise newException(RedisError, "Unix domain sockets are not supported on this platform")
+
+
+# Only the Redis object that open returns holds the socket, and net has no
+# destructor that closes one, so a failed connect would leak the descriptor.
+template closeOnError(socket: net.Socket, body: untyped) =
+  var connected = false
+  try:
+    body
+    connected = true
+  finally:
+    if not connected: socket.close()
+
+proc open*(host = "localhost", port = 6379.Port,
+           password = "", username = "", db = 0,
+           connectTimeoutMs = -1, readTimeoutMs = -1): Redis {.gcsafe.} =
+  ## Open a synchronous connection to a redis server.
+  result = Redis(
+    socket: newSocket(buffered = true),
+    pipeline: newPipeline(),
+    connected: false,
+    readTimeoutMs: readTimeoutMs
+  )
+
+  closeOnError(result.socket):
+    if connectTimeoutMs > 0:
+      try:
+        result.socket.connect(host, port, timeout = connectTimeoutMs)
+      except net.TimeoutError:
+        raise newException(RedisTimeoutError, "Connection to " & host & ":" & $port.int & " timed out after " & $connectTimeoutMs & "ms")
+    else:
+      result.socket.connect(host, port)
+
+  result.connected = true
+
+  if username.len > 0:
+    result.auth(username, password)
+  elif password.len > 0:
+    result.auth(password)
+  if db != 0:
+    discard result.select(db)
+
+proc openUnix*(path = "/var/run/redis/redis.sock",
+               password = "", username = "", db = 0,
+               connectTimeoutMs = -1, readTimeoutMs = -1): Redis {.gcsafe.} =
+  ## Open a synchronous unix connection to a redis server.
+  when defined(posix):
+    result = Redis(
+      socket: newSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
+      pipeline: newPipeline(),
+      connected: false,
+      readTimeoutMs: readTimeoutMs
+    )
+    closeOnError(result.socket):
+      result.socket.connectUnix(path)
+    result.connected = true
+    if username.len > 0:
+      result.auth(username, password)
+    elif password.len > 0:
+      result.auth(password)
+    if db != 0:
+      discard result.select(db)
+  else:
+    raise newException(RedisError, "Unix domain sockets are not supported on this platform")
+
+proc openAsync*(host = "localhost", port = 6379.Port,
+                password = "", username = "", db = 0,
+                connectTimeoutMs = -1, readTimeoutMs = -1): Future[AsyncRedis] {.async.} =
+  ## Open an asynchronous connection to a redis server.
+  result = AsyncRedis(
+    socket: newAsyncSocket(buffered = true),
+    pipeline: newPipeline(),
+    sendQueue: initDeque[Future[void]](),
+    connected: false,
+    readTimeoutMs: readTimeoutMs
+  )
+
+  if connectTimeoutMs > 0:
+    let connectFut = result.socket.connect(host, port)
+    if not await withTimeout(connectFut, connectTimeoutMs):
+      result.connected = false
+      try: result.socket.close() except CatchableError: discard
+      raise newException(RedisTimeoutError, "Connection to " & host & ":" & $port.int & " timed out after " & $connectTimeoutMs & "ms")
+    if connectFut.failed:
+      result.connected = false
+      try: result.socket.close() except CatchableError: discard
+      raise connectFut.readError()
+  else:
+    await result.socket.connect(host, port)
+
+  result.connected = true
+
+  if username.len > 0:
+    await result.auth(username, password)
+  elif password.len > 0:
+    await result.auth(password)
+  if db != 0:
+    discard await result.select(db)
+
+proc openUnixAsync*(path = "/var/run/redis/redis.sock",
+                    password = "", username = "", db = 0,
+                    connectTimeoutMs = -1, readTimeoutMs = -1): Future[AsyncRedis] {.async.} =
+  ## Open an asynchronous unix connection to a redis server.
+  when defined(posix):
+    result = AsyncRedis(
+      socket: newAsyncSocket(AF_UNIX, SOCK_STREAM, IPPROTO_IP, buffered = false),
+      pipeline: newPipeline(),
+      sendQueue: initDeque[Future[void]](),
+      connected: false,
+      readTimeoutMs: readTimeoutMs
+    )
+    await result.socket.connectUnix(path)
+    result.connected = true
+    if username.len > 0:
+      await result.auth(username, password)
+    elif password.len > 0:
+      await result.auth(password)
+    if db != 0:
+      discard await result.select(db)
   else:
     raise newException(RedisError, "Unix domain sockets are not supported on this platform")
 
