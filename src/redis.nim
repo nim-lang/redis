@@ -490,12 +490,13 @@ proc flushPipeline*(r: Redis | AsyncRedis, wasMulti = false): Future[RedisList] 
   # the replies after an error do not stay on the connection, where the
   # next command would read one of them as its own reply.
   var firstError = none(string)
-  for i in 0..tot-1:
-    # Filter status acknowledgments by their RESP type, so data replies
-    # whose text happens to be "OK" or "QUEUED" are preserved.
-    appendData(await r.readResp(), result, firstError)
-
-  r.pipeline.expected = 0
+  try:
+    for i in 0..tot-1:
+      # Filter status acknowledgments by their RESP type, so data replies
+      # whose text happens to be "OK" or "QUEUED" are preserved.
+      appendData(await r.readResp(), result, firstError)
+  finally:
+    r.pipeline.expected = 0
 
   if firstError.isSome:
     raiseRedisError(r, firstError.get)
@@ -512,28 +513,42 @@ proc flushPipelineValues*(r: Redis | AsyncRedis, wasMulti = false): Future[seq[R
 
   var tot = r.pipeline.expected
 
+  # Raise for an error reply only after the last reply is read, so that
+  # the replies after an error do not stay on the connection, where the
+  # next command would read one of them as its own reply.
+  var firstError = none(string)
   try:
     if wasMulti:
       var execReply: RespReply
       for i in 0 ..< tot:
         let reply = await r.readResp()
-        if reply.kind == respError:
-          raiseRedisError(r, reply.value)
+        if reply.kind == respError and firstError.isNone:
+          firstError = some(reply.value)
         if i == tot - 1:
           execReply = reply
-      if execReply.kind == respArray:
-        for elem in execReply.elements:
-          result.add(elem.toRedisValue())
-      elif execReply.kind == respNilArray:
-        discard
-      elif execReply.kind != respError:
-        result.add(execReply.toRedisValue())
+      if firstError.isNone:
+        if execReply.kind == respArray:
+          for elem in execReply.elements:
+            result.add(elem.toRedisValue())
+        elif execReply.kind != respNilArray:
+          result.add(execReply.toRedisValue())
     else:
       for i in 0 ..< tot:
         let reply = await r.readResp()
-        result.add(reply.toRedisValue())
+        if firstError.isSome:
+          continue
+        try:
+          result.add(reply.toRedisValue())
+        except RedisError as e:
+          firstError = some(e.msg)
   finally:
     r.pipeline.expected = 0
+
+  if firstError.isSome:
+    if wasMulti:
+      raiseRedisError(r, firstError.get)
+    else:
+      raise newException(RedisError, firstError.get)
 
 proc startPipelining*(r: Redis | AsyncRedis) =
   ## Enable command pipelining (reduces network roundtrips).
