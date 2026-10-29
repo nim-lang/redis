@@ -17,7 +17,7 @@
 ## Example
 ## --------
 ##
-## .. code-block::nim
+## .. code-block:: nim
 ##    import redis, asyncdispatch
 ##
 ##    proc main() {.async.} =
@@ -718,10 +718,68 @@ proc ttl*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.
   await r.sendCommand("TTL", key)
   return await r.readInteger()
 
-proc keyType*(r: Redis, key: string): RedisStatus =
+proc keyType*(r: Redis | AsyncRedis, key: string): Future[RedisStatus] {.multisync.} =
   ## Determine the type stored at key
-  r.sendCommand("TYPE", key)
-  result = r.readStatus()
+  await r.sendCommand("TYPE", key)
+  result = await r.readStatus()
+
+proc unlink*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Delete a key or multiple keys asynchronously in a background thread.
+  await r.sendCommand("UNLINK", keys)
+  result = await r.readInteger()
+
+proc unlink*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Delete a key asynchronously in a background thread.
+  await r.sendCommand("UNLINK", @[key])
+  result = await r.readInteger()
+
+
+proc touch*(r: Redis | AsyncRedis, keys: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Alters the last access time of a key(s). Returns the number of keys that were touched.
+  await r.sendCommand("TOUCH", keys)
+  result = await r.readInteger()
+
+proc touch*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Alters the last access time of a key. Returns 1 if key exists, 0 otherwise.
+  await r.sendCommand("TOUCH", @[key])
+  result = await r.readInteger()
+
+
+proc copy*(r: Redis | AsyncRedis, src, dst: string, db: int = -1, replace: bool = false): Future[bool] {.multisync.} =
+  ## Copy a key to another key. Returns true if the key was copied.
+  var args: seq[string] = @[src, dst]
+  if db >= 0:
+    args.add("DB")
+    args.add($db)
+  if replace:
+    args.add("REPLACE")
+  await r.sendCommand("COPY", args)
+  result = (await r.readInteger()) == 1
+
+proc pexpire*(r: Redis | AsyncRedis, key: string, milliseconds: BiggestInt): Future[bool] {.multisync.} =
+  ## Set a key's time to live in milliseconds.
+  await r.sendCommand("PEXPIRE", key, @[$milliseconds])
+  result = (await r.readInteger()) == 1
+
+proc pexpireAt*(r: Redis | AsyncRedis, key: string, timestampMs: BiggestInt): Future[bool] {.multisync.} =
+  ## Set the expiration for a key as a UNIX timestamp in milliseconds.
+  await r.sendCommand("PEXPIREAT", key, @[$timestampMs])
+  result = (await r.readInteger()) == 1
+
+proc pttl*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Get the time to live for a key in milliseconds.
+  await r.sendCommand("PTTL", @[key])
+  result = await r.readInteger()
+
+proc expireTime*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Get the expiration Unix timestamp for a key in seconds.
+  await r.sendCommand("EXPIRETIME", @[key])
+  result = await r.readInteger()
+
+proc pexpireTime*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Get the expiration Unix timestamp for a key in milliseconds.
+  await r.sendCommand("PEXPIRETIME", @[key])
+  result = await r.readInteger()
 
 
 # Strings
@@ -842,11 +900,51 @@ proc strlen*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisy
   await r.sendCommand("STRLEN", key)
   result = await r.readInteger()
 
+proc getDel*(r: Redis | AsyncRedis, key: string): Future[RedisString] {.multisync.} =
+  ## Get the value of a key and delete the key atomically.
+  await r.sendCommand("GETDEL", key)
+  result = await r.readBulkString()
+
+proc getEx*(r: Redis | AsyncRedis, key: string, seconds: int = -1, pseconds: BiggestInt = -1, persist: bool = false): Future[RedisString] {.multisync.} =
+  ## Get the value of a key and optionally set its expiration.
+  var args: seq[string] = @[key]
+  if persist:
+    args.add("PERSIST")
+  elif seconds >= 0:
+    args.add("EX")
+    args.add($seconds)
+  elif pseconds >= 0:
+    args.add("PX")
+    args.add($pseconds)
+  await r.sendCommand("GETEX", args)
+  result = await r.readBulkString()
+
+proc msetnx*(r: Redis | AsyncRedis, pairs: seq[(string, string)]): Future[bool] {.multisync.} =
+  ## Set multiple keys to multiple values, only if none of the keys exist.
+  var args: seq[string] = @[]
+  for (k, v) in pairs:
+    args.add(k)
+    args.add(v)
+  await r.sendCommand("MSETNX", args)
+  result = (await r.readInteger()) == 1
+
+
+proc incrByFloat*(r: Redis | AsyncRedis, key: string, increment: float): Future[float] {.multisync.} =
+  ## Increment the float value of a key by the given amount.
+  await r.sendCommand("INCRBYFLOAT", key, @[$increment])
+  let res = await r.readBulkString()
+  result = parseFloat(res)
+
 # Hashes
 proc hDel*(r: Redis | AsyncRedis, key, field: string): Future[bool] {.multisync.} =
   ## Delete a hash field at `key`. Returns `true` if the field was removed.
   await r.sendCommand("HDEL", key, @[field])
   result = (await r.readInteger()) == 1
+
+proc hDel*(r: Redis | AsyncRedis, key: string, fields: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Delete one or more hash fields at `key`. Returns the number of fields removed.
+  await r.sendCommand("HDEL", key, fields)
+  result = await r.readInteger()
 
 proc hExists*(r: Redis | AsyncRedis, key, field: string): Future[bool] {.multisync.} =
   ## Determine if a hash field exists.
@@ -907,6 +1005,30 @@ proc hVals*(r: Redis | AsyncRedis, key: string): Future[RedisList] {.multisync.}
   ## Get all the values in a hash
   await r.sendCommand("HVALS", key)
   result = await r.readArray()
+
+proc hSet*(r: Redis | AsyncRedis, key: string, pairs: seq[(string, string)]): Future[RedisInteger] {.multisync.} =
+  ## Set multiple field-value pairs in a hash (Redis 4.0+)
+  var args = newSeqOfCap[string](pairs.len * 2)
+  for (f, v) in pairs:
+    args.add(f)
+    args.add(v)
+  await r.sendCommand("HSET", key, args)
+  result = await r.readInteger()
+
+
+proc hRandField*(r: Redis | AsyncRedis, key: string, count: int = 1, withValues: bool = false): Future[seq[string]] {.multisync.} =
+  ## Get one or multiple random fields from a hash (Redis 6.2+)
+  var args: seq[string] = @[$count]
+  if withValues:
+    args.add("WITHVALUES")
+  await r.sendCommand("HRANDFIELD", key, args)
+  result = await r.readArray()
+
+proc hStrLen*(r: Redis | AsyncRedis, key, field: string): Future[RedisInteger] {.multisync.} =
+  ## Get the string length of the value of a hash field (Redis 3.2+)
+  await r.sendCommand("HSTRLEN", key, @[field])
+  result = await r.readInteger()
+
 
 # Lists
 
@@ -1247,6 +1369,11 @@ proc zrem*(r: Redis | AsyncRedis, key: string, member: string): Future[RedisInte
   await r.sendCommand("ZREM", key, @[member])
   result = await r.readInteger()
 
+proc zrem*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Remove one or more members from a sorted set (Redis 2.4+)
+  await r.sendCommand("ZREM", key, members)
+  result = await r.readInteger()
+
 proc zremrangebyrank*(r: Redis | AsyncRedis, key: string, start: string,
                      stop: string): Future[RedisInteger] {.multisync.} =
   ## Remove all members in a sorted set within the given indexes
@@ -1325,6 +1452,111 @@ proc zunionstore*(r: Redis | AsyncRedis, destination: string, numkeys: string,
   await r.sendCommand("ZUNIONSTORE", args)
 
   result = await r.readInteger()
+
+proc zmscore*(r: Redis | AsyncRedis, key: string, members: seq[string]): Future[seq[Option[float]]] {.multisync.} =
+  ## Returns the scores associated with the specified members in a sorted set (Redis 6.2+)
+  await r.sendCommand("ZMSCORE", key, members)
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  result = @[]
+  if reply.kind == respArray:
+    for elem in reply.elements:
+      if elem.kind == respNilBulk or elem.kind == respNilArray:
+        result.add(none(float))
+      else:
+        result.add(some(parseFloat(elem.value)))
+
+proc zpopmin*(r: Redis | AsyncRedis, key: string, count: int = 1): Future[seq[tuple[member: string, score: float]]] {.multisync.} =
+  ## Remove and return members with the lowest scores in a sorted set (Redis 5.0+)
+  await r.sendCommand("ZPOPMIN", key, @[$count])
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  result = @[]
+  if reply.kind == respArray:
+    for i in countup(0, reply.elements.len - 1, 2):
+      if i + 1 < reply.elements.len:
+        result.add((reply.elements[i].value, parseFloat(reply.elements[i+1].value)))
+
+proc zpopmax*(r: Redis | AsyncRedis, key: string, count: int = 1): Future[seq[tuple[member: string, score: float]]] {.multisync.} =
+  ## Remove and return members with the highest scores in a sorted set (Redis 5.0+)
+  await r.sendCommand("ZPOPMAX", key, @[$count])
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  result = @[]
+  if reply.kind == respArray:
+    for i in countup(0, reply.elements.len - 1, 2):
+      if i + 1 < reply.elements.len:
+        result.add((reply.elements[i].value, parseFloat(reply.elements[i+1].value)))
+
+proc bzpopmin*(r: Redis | AsyncRedis, keys: seq[string], timeout: int = 0): Future[Option[tuple[key, member: string, score: float]]] {.multisync.} =
+  ## Blocking pop of member with lowest score across sorted sets (Redis 5.0+)
+  var args = keys
+  args.add($timeout)
+  await r.sendCommand("BZPOPMIN", args)
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  if reply.kind == respArray and reply.elements.len >= 3:
+    result = some((reply.elements[0].value, reply.elements[1].value, parseFloat(reply.elements[2].value)))
+  else:
+    result = none(tuple[key, member: string, score: float])
+
+proc bzpopmax*(r: Redis | AsyncRedis, keys: seq[string], timeout: int = 0): Future[Option[tuple[key, member: string, score: float]]] {.multisync.} =
+  ## Blocking pop of member with highest score across sorted sets (Redis 5.0+)
+  var args = keys
+  args.add($timeout)
+  await r.sendCommand("BZPOPMAX", args)
+  let reply = await r.readResp()
+  finaliseCommand(r)
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  if reply.kind == respArray and reply.elements.len >= 3:
+    result = some((reply.elements[0].value, reply.elements[1].value, parseFloat(reply.elements[2].value)))
+  else:
+    result = none(tuple[key, member: string, score: float])
+
+proc zrandmember*(r: Redis | AsyncRedis, key: string, count: int = 1): Future[seq[string]] {.multisync.} =
+  ## Return random members from a sorted set (Redis 6.2+)
+  await r.sendCommand("ZRANDMEMBER", key, @[$count])
+  result = await r.readArray()
+
+proc zdiff*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false): Future[RedisList] {.multisync.} =
+  ## Return the difference between multiple sorted sets (Redis 6.2+)
+  var args: seq[string] = @[$keys.len]
+  for k in keys: args.add(k)
+  if withScores: args.add("WITHSCORES")
+  await r.sendCommand("ZDIFF", args)
+  result = await r.readArray()
+
+proc zdiffstore*(r: Redis | AsyncRedis, destination: string, keys: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Store the difference between multiple sorted sets in a destination key (Redis 6.2+)
+  var args: seq[string] = @[destination, $keys.len]
+  for k in keys: args.add(k)
+  await r.sendCommand("ZDIFFSTORE", args)
+  result = await r.readInteger()
+
+proc zinter*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false): Future[RedisList] {.multisync.} =
+  ## Return the intersection of multiple sorted sets (Redis 6.2+)
+  var args: seq[string] = @[$keys.len]
+  for k in keys: args.add(k)
+  if withScores: args.add("WITHSCORES")
+  await r.sendCommand("ZINTER", args)
+  result = await r.readArray()
+
+proc zunion*(r: Redis | AsyncRedis, keys: seq[string], withScores: bool = false): Future[RedisList] {.multisync.} =
+  ## Return the union of multiple sorted sets (Redis 6.2+)
+  var args: seq[string] = @[$keys.len]
+  for k in keys: args.add(k)
+  if withScores: args.add("WITHSCORES")
+  await r.sendCommand("ZUNION", args)
+  result = await r.readArray()
 
 # HyperLogLog
 
@@ -1463,6 +1695,16 @@ proc ping*(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
   await r.sendCommand("PING")
   result = await r.readStatus()
 
+proc ping*(r: Redis | AsyncRedis, message: string): Future[RedisString] {.multisync.} =
+  ## Ping the server with a custom message. Returns the message.
+  await r.sendCommand("PING", message)
+  result = await r.readBulkString()
+
+proc hello*(r: Redis | AsyncRedis, protover: int = 2): Future[RedisValue] {.multisync.} =
+  ## Switch protocol or handshake with Redis 6+.
+  await r.sendCommand("HELLO", @[$protover])
+  result = await r.readValue()
+
 proc close*(r: Redis | AsyncRedis): Future[void] {.multisync.} =
   ## Close the connection
   r.socket.close()
@@ -1575,28 +1817,17 @@ proc slaveof*(r: Redis | AsyncRedis, host: string, port: string): Future[void] {
 
 iterator hPairs*(r: Redis, key: string): tuple[key, value: string] =
   ## Iterator for keys and values in a hash.
-  var
-    contents = r.hGetAll(key)
-    k = ""
-  for i in items(contents):
-    if k == "":
-      k = i
-    else:
-      yield (k, i)
-      k = ""
+  let contents = r.hGetAll(key)
+  for i in countup(0, contents.len - 1, 2):
+    if i + 1 < contents.len:
+      yield (contents[i], contents[i+1])
 
 proc hPairs*(r: AsyncRedis, key: string): Future[seq[tuple[key, value: string]]] {.async.} =
-  var
-    contents = await r.hGetAll(key)
-    k = ""
-
+  let contents = await r.hGetAll(key)
   result = @[]
-  for i in items(contents):
-    if k == "":
-      k = i
-    else:
-      result.add((k, i))
-      k = ""
+  for i in countup(0, contents.len - 1, 2):
+    if i + 1 < contents.len:
+      result.add((contents[i], contents[i+1]))
 
 # Scripting
 
@@ -1698,6 +1929,148 @@ proc rawCommand*(r: AsyncRedis, cmd: string, args: varargs[string]): Future[Redi
   for a in args:
     argSeq.add(a)
   result = r.rawCommand(cmd, argSeq)
+
+# Cursor Scanning & Iterators
+
+proc scan*(r: Redis | AsyncRedis, cursor: int, pattern = "*", count = 10, keyType = ""): Future[tuple[cursor: int, keys: seq[string]]] {.multisync.} =
+  ## Incrementally iterate the keys space using SCAN.
+  var args: seq[string] = @[$cursor]
+  if pattern != "*":
+    args.add("MATCH")
+    args.add(pattern)
+  if count != 10:
+    args.add("COUNT")
+    args.add($count)
+  if keyType.len > 0:
+    args.add("TYPE")
+    args.add(keyType)
+  await r.sendCommand("SCAN", args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result.cursor = 0
+  result.keys = @[]
+  if reply.kind == respArray and reply.elements.len >= 2:
+    result.cursor = parseInt(reply.elements[0].value)
+    if reply.elements[1].kind == respArray:
+      for e in reply.elements[1].elements:
+        result.keys.add(e.value)
+
+proc hscan*(r: Redis | AsyncRedis, key: string, cursor: int, pattern = "*", count = 10): Future[tuple[cursor: int, pairs: seq[tuple[field, value: string]]]] {.multisync.} =
+  ## Incrementally iterate fields and values of a hash using HSCAN.
+  var args: seq[string] = @[$cursor]
+  if pattern != "*":
+    args.add("MATCH")
+    args.add(pattern)
+  if count != 10:
+    args.add("COUNT")
+    args.add($count)
+  await r.sendCommand("HSCAN", key, args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result.cursor = 0
+  result.pairs = @[]
+  if reply.kind == respArray and reply.elements.len >= 2:
+    result.cursor = parseInt(reply.elements[0].value)
+    if reply.elements[1].kind == respArray:
+      let elems = reply.elements[1].elements
+      for i in countup(0, elems.len - 1, 2):
+        if i + 1 < elems.len:
+          result.pairs.add((elems[i].value, elems[i+1].value))
+
+proc sscan*(r: Redis | AsyncRedis, key: string, cursor: int, pattern = "*", count = 10): Future[tuple[cursor: int, members: seq[string]]] {.multisync.} =
+  ## Incrementally iterate elements of a set using SSCAN.
+  var args: seq[string] = @[$cursor]
+  if pattern != "*":
+    args.add("MATCH")
+    args.add(pattern)
+  if count != 10:
+    args.add("COUNT")
+    args.add($count)
+  await r.sendCommand("SSCAN", key, args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result.cursor = 0
+  result.members = @[]
+  if reply.kind == respArray and reply.elements.len >= 2:
+    result.cursor = parseInt(reply.elements[0].value)
+    if reply.elements[1].kind == respArray:
+      for e in reply.elements[1].elements:
+        result.members.add(e.value)
+
+proc zscan*(r: Redis | AsyncRedis, key: string, cursor: int, pattern = "*", count = 10): Future[tuple[cursor: int, entries: seq[tuple[member: string, score: float]]]] {.multisync.} =
+  ## Incrementally iterate elements of a sorted set using ZSCAN.
+  var args: seq[string] = @[$cursor]
+  if pattern != "*":
+    args.add("MATCH")
+    args.add(pattern)
+  if count != 10:
+    args.add("COUNT")
+    args.add($count)
+  await r.sendCommand("ZSCAN", key, args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result.cursor = 0
+  result.entries = @[]
+  if reply.kind == respArray and reply.elements.len >= 2:
+    result.cursor = parseInt(reply.elements[0].value)
+    if reply.elements[1].kind == respArray:
+      let elems = reply.elements[1].elements
+      for i in countup(0, elems.len - 1, 2):
+        if i + 1 < elems.len:
+          result.entries.add((elems[i].value, parseFloat(elems[i+1].value)))
+
+# Sync iterators
+iterator scan*(r: Redis, pattern = "*", count = 10, keyType = ""): string =
+  ## Synchronous iterator to yield keys one by one using SCAN.
+  var cursor = 0
+  var first = true
+  while first or cursor != 0:
+    first = false
+    let batch = r.scan(cursor, pattern, count, keyType)
+    cursor = batch.cursor
+    for k in batch.keys:
+      yield k
+
+iterator hscan*(r: Redis, key: string, pattern = "*", count = 10): tuple[field, value: string] =
+  ## Synchronous iterator to yield hash field-value pairs using HSCAN.
+  var cursor = 0
+  var first = true
+  while first or cursor != 0:
+    first = false
+    let batch = r.hscan(key, cursor, pattern, count)
+    cursor = batch.cursor
+    for p in batch.pairs:
+      yield p
+
+iterator sscan*(r: Redis, key: string, pattern = "*", count = 10): string =
+  ## Synchronous iterator to yield set members using SSCAN.
+  var cursor = 0
+  var first = true
+  while first or cursor != 0:
+    first = false
+    let batch = r.sscan(key, cursor, pattern, count)
+    cursor = batch.cursor
+    for m in batch.members:
+      yield m
+
+iterator zscan*(r: Redis, key: string, pattern = "*", count = 10): tuple[member: string, score: float] =
+  ## Synchronous iterator to yield sorted set member-score pairs using ZSCAN.
+  var cursor = 0
+  var first = true
+  while first or cursor != 0:
+    first = false
+    let batch = r.zscan(key, cursor, pattern, count)
+    cursor = batch.cursor
+    for e in batch.entries:
+      yield e
 
 type
   SendMode = enum
