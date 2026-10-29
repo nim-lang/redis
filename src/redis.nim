@@ -74,10 +74,7 @@ type
     message*: string
   RedisError* = object of IOError ## Base error in redis
   ReplyError* = object of RedisError ## Invalid reply from redis
-  RedisConnectionError* = object of RedisError ## Connection establishment or socket drop error
-  RedisTimeoutError* = object of RedisConnectionError ## Connection or socket action timeout
-  RedisResponseError* = object of RedisError ## Server error reply (e.g. -ERR, -WRONGTYPE)
-    errorCode*: string
+  RedisTimeoutError* = object of RedisError ## Connection or socket action timeout
 
   RedisCursor* = ref object
     position*: BiggestInt
@@ -139,15 +136,7 @@ proc raiseReplyError(r: Redis | AsyncRedis, msg: string) =
 
 proc raiseRedisError(r: Redis | AsyncRedis, msg: string) =
   finaliseCommand(r)
-  var code = ""
-  if msg.len > 0:
-    let parts = msg.split(' ', 1)
-    code = parts[0]
-    if code.startsWith("-"):
-      code = code.substr(1)
-  var ex = newException(RedisResponseError, msg)
-  ex.errorCode = code
-  raise ex
+  raise newException(RedisError, msg)
 
 proc isSocketClosed*(s: net.Socket): bool =
   s == nil or s.getFd() == osInvalidSocket
@@ -164,7 +153,7 @@ proc managedSend(
     except CatchableError as sendErr:
       r.connected = false
       try: r.socket.close() except CatchableError: discard
-      raise newException(RedisConnectionError, "Send failed: " & sendErr.msg, sendErr)
+      raise newException(RedisError, "Send failed: " & sendErr.msg, sendErr)
   else:
 
     proc doSend() =
@@ -200,7 +189,7 @@ proc managedRecv(
           r.connected = false
           try: r.socket.close() except CatchableError: discard
           finaliseCommand(r)
-          raise newException(RedisConnectionError, "Recv failed: " & e.msg, e)
+          raise newException(RedisError, "Recv failed: " & e.msg, e)
       else:
         n = r.socket.recv(addr result[totalRecv], remaining)
       if n <= 0:
@@ -247,7 +236,7 @@ proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
         r.connected = false
         try: r.socket.close() except CatchableError: discard
         finaliseCommand(r)
-        raise newException(RedisConnectionError, "Recv line failed: " & e.msg, e)
+        raise newException(RedisError, "Recv line failed: " & e.msg, e)
     else:
       result = recvLine(r.socket)
   else:
@@ -273,7 +262,7 @@ proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
     r.connected = false
     try: r.socket.close() except CatchableError: discard
     finaliseCommand(r)
-    raise newException(RedisConnectionError, "Server closed connection prematurely")
+    raise newException(RedisError, "Server closed connection prematurely")
 
 type
   RespKind = enum
@@ -300,7 +289,7 @@ proc readResp(r: Redis | AsyncRedis): Future[RespReply] {.multisync.} =
       raiseReplyError(r, "readResp called while pipelining is enabled")
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   case line[0]
   of '+':
@@ -369,15 +358,7 @@ proc toRedisValue*(reply: RespReply): RedisValue =
     var msg = reply.value
     if msg.len > 0 and msg[0] == '-':
       msg = msg.substr(1).strip()
-    var code = ""
-    if msg.len > 0:
-      let parts = msg.split(' ', 1)
-      code = parts[0]
-      if code.startsWith("-"):
-        code = code.substr(1)
-    var ex = newException(RedisResponseError, msg)
-    ex.errorCode = code
-    raise ex
+    raise newException(RedisError, msg)
   of respInteger:
     result = RedisValue(kind: vkInteger, intVal: parseBiggestInt(reply.value))
   of respBulk:
@@ -414,7 +395,7 @@ proc parseStatus(r: Redis | AsyncRedis, line: string = ""): RedisStatus =
 
   if line == "":
     r.connected = false
-    raise newException(RedisConnectionError, "Server closed connection prematurely")
+    raise newException(RedisError, "Server closed connection prematurely")
 
   if line[0] == '-':
     raiseRedisError(r, strip(line))
@@ -431,7 +412,7 @@ proc readStatus(r: Redis | AsyncRedis): Future[RedisStatus] {.multisync.} =
       return "PIPELINED"
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   result = r.parseStatus(line)
   finaliseCommand(r)
@@ -445,7 +426,7 @@ proc parseInteger(r: Redis | AsyncRedis, line: string = ""): RedisInteger =
 
   if line == "":
     r.connected = false
-    raise newException(RedisConnectionError, "Server closed connection prematurely")
+    raise newException(RedisError, "Server closed connection prematurely")
 
   if line[0] == '-':
     raiseRedisError(r, strip(line))
@@ -463,7 +444,7 @@ proc readInteger(r: Redis | AsyncRedis): Future[RedisInteger] {.multisync.} =
       return -1
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   result = r.parseInteger(line)
   finaliseCommand(r)
@@ -504,7 +485,7 @@ proc readSingleString(r: Redis | AsyncRedis): Future[RedisString] {.multisync.} 
       return ""
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   let res = await r.readSingleString(line, allowMBNil = false)
   result = res.get(redisNil)
@@ -541,7 +522,7 @@ proc readArrayLines(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
       return @[]
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   result = await r.readArrayLines(line)
 
@@ -552,7 +533,7 @@ proc readBulkString(r: Redis | AsyncRedis, allowMBNil = false): Future[RedisStri
       return ""
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   let res = await r.readSingleString(line, allowMBNil)
   result = res.get(redisNil)
@@ -565,7 +546,7 @@ proc readArray(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
       return @[]
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   result = await r.readArrayLines(line)
   finaliseCommand(r)
@@ -578,7 +559,7 @@ proc readNext(r: Redis | AsyncRedis): Future[RedisList] {.multisync.} =
       return @[]
     else:
       r.connected = false
-      raise newException(RedisConnectionError, "Server closed connection prematurely")
+      raise newException(RedisError, "Server closed connection prematurely")
 
   # TODO: This is no longer an expression due to
   # https://github.com/nim-lang/Nim/issues/8399

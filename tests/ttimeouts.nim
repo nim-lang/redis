@@ -144,15 +144,14 @@ suite "Redis Timeouts and Reconnect (Async)":
 
     waitFor runTest()
 
-suite "Redis Error Hierarchy and Diagnostics":
-  test "RedisTimeoutError inherits from RedisConnectionError and RedisError":
+suite "Redis Error Diagnostics":
+  test "RedisTimeoutError inherits from RedisError":
     let ex = newException(RedisTimeoutError, "timeout occurred")
     check ex of RedisTimeoutError
-    check ex of RedisConnectionError
     check ex of RedisError
     check ex of IOError
 
-  test "RedisResponseError captures parsed errorCode":
+  test "Redis error reply raises RedisError":
     let r = redis.open(getHost(), getPort())
     discard r.flushdb()
     r.setk("test:type:str", "simple_string")
@@ -161,10 +160,9 @@ suite "Redis Error Hierarchy and Diagnostics":
     try:
       # HGETALL on a string key will trigger WRONGTYPE
       discard r.hGetAll("test:type:str")
-    except RedisResponseError as e:
+    except RedisError as e:
       caught = true
-      check e.errorCode == "WRONGTYPE"
-      check e of RedisError
+      check "WRONGTYPE" in e.msg
     check caught == true
     r.quit()
 
