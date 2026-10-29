@@ -81,10 +81,7 @@ type
     id*: string
     fields*: seq[tuple[field, value: string]]
 
-  StreamReadResult* = object
-    ## Result of an XREAD or XREADGROUP operation on a stream.
-    stream*: string
-    entries*: seq[StreamEntry]
+  StreamReadResult* = tuple[stream: string, entries: seq[StreamEntry]]
 
 proc newPipeline(): Pipeline =
   new(result)
@@ -2134,7 +2131,7 @@ proc parseStreamReadResults(reply: RespReply): seq[StreamReadResult] =
   if reply.kind == respArray:
     for streamElem in reply.elements:
       if streamElem.kind == respArray and streamElem.elements.len >= 2:
-        var res = StreamReadResult(
+        var res: StreamReadResult = (
           stream: streamElem.elements[0].value,
           entries: @[]
         )
