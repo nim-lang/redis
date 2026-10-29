@@ -2303,7 +2303,7 @@ proc xreadGroup*(r: Redis | AsyncRedis, group, consumer, stream: string, id: str
 # Stream Iterators
 
 iterator readStream*(r: Redis, stream: string, startId = "0-0", count = 10): StreamEntry =
-  ## Synchronous iterator to paginate and yield entries from a stream using XREAD.
+  ## Synchronous iterator to iterate through entries in a stream using XREAD in batches.
   var currentId = if startId == "0" or startId == "-": "0-0" else: startId
   while true:
     let res = r.xread(@[(stream, currentId)], count = count)
