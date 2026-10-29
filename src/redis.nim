@@ -76,6 +76,13 @@ type
   RedisCursor* = ref object
     position*: BiggestInt
 
+  StreamEntry* = object
+    ## A Redis stream entry consisting of an ID and field-value pairs.
+    id*: string
+    fields*: seq[tuple[field, value: string]]
+
+  StreamReadResult* = tuple[stream: string, entries: seq[StreamEntry]]
+
 proc newPipeline(): Pipeline =
   new(result)
   result.buffer = ""
@@ -89,6 +96,32 @@ proc newCursor*(pos: BiggestInt = 0): RedisCursor =
 
 proc `$`*(cursor: RedisCursor): string =
   result = $cursor.position
+
+proc `$`*(entry: StreamEntry): string =
+  result = entry.id & ": " & $entry.fields
+
+proc `$`*(res: StreamReadResult): string =
+  result = res.stream & ": " & $res.entries
+
+proc getField*(entry: StreamEntry, field: string): string =
+  ## Retrieve the value of a field in a StreamEntry, or empty string if not found.
+  for (f, v) in entry.fields:
+    if f == field: return v
+  return ""
+
+proc hasField*(entry: StreamEntry, field: string): bool =
+  ## Returns true if the field exists in the StreamEntry.
+  for (f, _) in entry.fields:
+    if f == field: return true
+  return false
+
+proc `[]`*(entry: StreamEntry, field: string): string {.inline.} =
+  ## Retrieve the value of a field in a StreamEntry using standard container syntax.
+  entry.getField(field)
+
+proc contains*(entry: StreamEntry, field: string): bool {.inline.} =
+  ## Check if a field exists in a StreamEntry using the `in` operator.
+  entry.hasField(field)
 
 # Only the Redis object that open returns holds the socket, and net has no
 # destructor that closes one, so a failed connect would leak the descriptor.
@@ -2071,6 +2104,214 @@ iterator zscan*(r: Redis, key: string, pattern = "*", count = 10): tuple[member:
     cursor = batch.cursor
     for e in batch.entries:
       yield e
+
+# ---------------------------------------------------------------------------
+# Redis Streams
+# ---------------------------------------------------------------------------
+
+proc parseStreamEntry(elem: RespReply): StreamEntry =
+  result.id = ""
+  result.fields = @[]
+  if elem.kind == respArray and elem.elements.len >= 2:
+    result.id = elem.elements[0].value
+    if elem.elements[1].kind == respArray:
+      let fElems = elem.elements[1].elements
+      for i in countup(0, fElems.len - 1, 2):
+        if i + 1 < fElems.len:
+          result.fields.add((fElems[i].value, fElems[i+1].value))
+
+proc parseStreamEntries(reply: RespReply): seq[StreamEntry] =
+  result = @[]
+  if reply.kind == respArray:
+    for elem in reply.elements:
+      result.add(parseStreamEntry(elem))
+
+proc parseStreamReadResults(reply: RespReply): seq[StreamReadResult] =
+  result = @[]
+  if reply.kind == respArray:
+    for streamElem in reply.elements:
+      if streamElem.kind == respArray and streamElem.elements.len >= 2:
+        var res: StreamReadResult = (
+          stream: streamElem.elements[0].value,
+          entries: @[]
+        )
+        if streamElem.elements[1].kind == respArray:
+          for entryElem in streamElem.elements[1].elements:
+            res.entries.add(parseStreamEntry(entryElem))
+        result.add(res)
+
+proc xadd*(r: Redis | AsyncRedis, key: string, fields: seq[tuple[field, value: string]], id: string = "*", maxLen: int = -1, approximate: bool = false): Future[string] {.multisync.} =
+  ## Append a new entry to a stream. Returns the ID of the added entry.
+  var args: seq[string] = @[]
+  if maxLen >= 0:
+    args.add("MAXLEN")
+    if approximate:
+      args.add("~")
+    args.add($maxLen)
+  args.add(id)
+  for (f, v) in fields:
+    args.add(f)
+    args.add(v)
+  await r.sendCommand("XADD", key, args)
+  result = await r.readBulkString()
+
+proc xadd*(r: Redis | AsyncRedis, key: string, id: string, fields: seq[tuple[field, value: string]], maxLen: int = -1, approximate: bool = false): Future[string] {.multisync.} =
+  ## Append a new entry to a stream with explicit ID argument.
+  result = await r.xadd(key, fields, id, maxLen, approximate)
+
+proc xlen*(r: Redis | AsyncRedis, key: string): Future[RedisInteger] {.multisync.} =
+  ## Return the number of elements in a stream.
+  await r.sendCommand("XLEN", key)
+  result = await r.readInteger()
+
+proc xrange*(r: Redis | AsyncRedis, key: string, start = "-", stop = "+", count = -1): Future[seq[StreamEntry]] {.multisync.} =
+  ## Return a range of elements in a stream by ID order.
+  var args: seq[string] = @[start, stop]
+  if count >= 0:
+    args.add("COUNT")
+    args.add($count)
+  await r.sendCommand("XRANGE", key, args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result = parseStreamEntries(reply)
+
+proc xrevrange*(r: Redis | AsyncRedis, key: string, start = "+", stop = "-", count = -1): Future[seq[StreamEntry]] {.multisync.} =
+  ## Return a range of elements in a stream in reverse ID order.
+  var args: seq[string] = @[start, stop]
+  if count >= 0:
+    args.add("COUNT")
+    args.add($count)
+  await r.sendCommand("XREVRANGE", key, args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result = parseStreamEntries(reply)
+
+proc xdel*(r: Redis | AsyncRedis, key: string, ids: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Delete one or more elements from a stream by ID. Returns the number of entries deleted.
+  await r.sendCommand("XDEL", key, ids)
+  result = await r.readInteger()
+
+proc xdel*(r: Redis | AsyncRedis, key: string, id: string): Future[RedisInteger] {.multisync.} =
+  ## Delete a single element from a stream by ID.
+  result = await r.xdel(key, @[id])
+
+proc xtrim*(r: Redis | AsyncRedis, key: string, maxLen: int, approximate = false): Future[RedisInteger] {.multisync.} =
+  ## Trim the stream to a maximum number of elements.
+  var args: seq[string] = @["MAXLEN"]
+  if approximate:
+    args.add("~")
+  args.add($maxLen)
+  await r.sendCommand("XTRIM", key, args)
+  result = await r.readInteger()
+
+proc xread*(r: Redis | AsyncRedis, streams: seq[tuple[stream, id: string]], count = -1, blockMs = -1): Future[seq[StreamReadResult]] {.multisync.} =
+  ## Read data from one or multiple streams.
+  var args: seq[string] = @[]
+  if count >= 0:
+    args.add("COUNT")
+    args.add($count)
+  if blockMs >= 0:
+    args.add("BLOCK")
+    args.add($blockMs)
+  args.add("STREAMS")
+  for s in streams:
+    args.add(s.stream)
+  for s in streams:
+    args.add(s.id)
+  await r.sendCommand("XREAD", args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result = parseStreamReadResults(reply)
+
+proc xread*(r: Redis | AsyncRedis, stream: string, id: string = "0", count = -1, blockMs = -1): Future[seq[StreamEntry]] {.multisync.} =
+  ## Convenience single-stream overload for xread, returning StreamEntry items directly.
+  let res = await r.xread(@[(stream, id)], count, blockMs)
+  if res.len > 0:
+    return res[0].entries
+  return @[]
+
+proc xgroupCreate*(r: Redis | AsyncRedis, key, group, id: string, makeStream = false): Future[RedisStatus] {.multisync.} =
+  ## Create a new consumer group for a stream.
+  var args: seq[string] = @["CREATE", key, group, id]
+  if makeStream:
+    args.add("MKSTREAM")
+  await r.sendCommand("XGROUP", args)
+  result = await r.readStatus()
+
+proc xgroupDestroy*(r: Redis | AsyncRedis, key, group: string): Future[RedisInteger] {.multisync.} =
+  ## Destroy a consumer group.
+  await r.sendCommand("XGROUP", @["DESTROY", key, group])
+  result = await r.readInteger()
+
+proc xgroupSetId*(r: Redis | AsyncRedis, key, group, id: string): Future[RedisStatus] {.multisync.} =
+  ## Set the last delivered ID for a consumer group.
+  await r.sendCommand("XGROUP", @["SETID", key, group, id])
+  result = await r.readStatus()
+
+proc xgroupDelConsumer*(r: Redis | AsyncRedis, key, group, consumer: string): Future[RedisInteger] {.multisync.} =
+  ## Delete a consumer from a consumer group.
+  await r.sendCommand("XGROUP", @["DELCONSUMER", key, group, consumer])
+  result = await r.readInteger()
+
+proc xack*(r: Redis | AsyncRedis, key, group: string, ids: seq[string]): Future[RedisInteger] {.multisync.} =
+  ## Acknowledge one or more messages as processed by the consumer group.
+  var args: seq[string] = @[group]
+  for id in ids:
+    args.add(id)
+  await r.sendCommand("XACK", key, args)
+  result = await r.readInteger()
+
+proc xack*(r: Redis | AsyncRedis, key, group, id: string): Future[RedisInteger] {.multisync.} =
+  result = await r.xack(key, group, @[id])
+
+proc xreadGroup*(r: Redis | AsyncRedis, group, consumer: string, streams: seq[tuple[stream, id: string]], count = -1, blockMs = -1, noAck = false): Future[seq[StreamReadResult]] {.multisync.} =
+  ## Read data from one or multiple streams using a consumer group.
+  var args: seq[string] = @["GROUP", group, consumer]
+  if count >= 0:
+    args.add("COUNT")
+    args.add($count)
+  if blockMs >= 0:
+    args.add("BLOCK")
+    args.add($blockMs)
+  if noAck:
+    args.add("NOACK")
+  args.add("STREAMS")
+  for s in streams:
+    args.add(s.stream)
+  for s in streams:
+    args.add(s.id)
+  await r.sendCommand("XREADGROUP", args)
+  let reply = await r.readResp()
+  if reply.kind == respError:
+    raiseRedisError(r, reply.value)
+  finaliseCommand(r)
+  result = parseStreamReadResults(reply)
+
+proc xreadGroup*(r: Redis | AsyncRedis, group, consumer, stream: string, id: string = ">", count = -1, blockMs = -1, noAck = false): Future[seq[StreamEntry]] {.multisync.} =
+  ## Convenience single-stream overload for xreadGroup, returning StreamEntry items directly.
+  let res = await r.xreadGroup(group, consumer, @[(stream, id)], count, blockMs, noAck)
+  if res.len > 0:
+    return res[0].entries
+  return @[]
+
+# Stream Iterators
+
+iterator readStream*(r: Redis, stream: string, startId = "0-0", count = 10): StreamEntry =
+  ## Synchronous iterator to iterate through entries in a stream using XREAD in batches.
+  var currentId = if startId == "0" or startId == "-": "0-0" else: startId
+  while true:
+    let res = r.xread(@[(stream, currentId)], count = count)
+    if res.len == 0 or res[0].entries.len == 0:
+      break
+    for entry in res[0].entries:
+      currentId = entry.id
+      yield entry
 
 type
   SendMode = enum
