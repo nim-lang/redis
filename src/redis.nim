@@ -144,6 +144,33 @@ proc isSocketClosed*(s: net.Socket): bool =
 proc isSocketClosed*(s: asyncnet.AsyncSocket): bool =
   s == nil or s.isClosed()
 
+template closeOnTimeout(r: Redis, desc: string, body: untyped) =
+  try:
+    body
+  except net.TimeoutError:
+    r.connected = false
+    try: r.socket.close() except CatchableError: discard
+    finaliseCommand(r)
+    raise newException(RedisTimeoutError, desc & " timed out after " & $r.readTimeoutMs & "ms")
+  except CatchableError as e:
+    r.connected = false
+    try: r.socket.close() except CatchableError: discard
+    finaliseCommand(r)
+    raise newException(RedisError, desc & " failed: " & e.msg, e)
+
+template awaitWithDeadline(r: AsyncRedis, futExpr: untyped, desc: string): untyped =
+  let f = futExpr
+  if not await withTimeout(f, r.readTimeoutMs):
+    r.connected = false
+    try: r.socket.close() except CatchableError: discard
+    finaliseCommand(r)
+    raise newException(RedisTimeoutError, desc & " timed out after " & $r.readTimeoutMs & "ms")
+  if f.failed:
+    r.connected = false
+    finaliseCommand(r)
+    raise f.readError()
+  f.read()
+
 proc managedSend(
   r: Redis | AsyncRedis, data: string
 ): Future[void] {.multisync.} =
@@ -178,18 +205,8 @@ proc managedRecv(
       let remaining = size - totalRecv
       var n = 0
       if r.readTimeoutMs > 0:
-        try:
+        r.closeOnTimeout("Read"):
           n = r.socket.recv(addr result[totalRecv], remaining, timeout = r.readTimeoutMs)
-        except net.TimeoutError:
-          r.connected = false
-          try: r.socket.close() except CatchableError: discard
-          finaliseCommand(r)
-          raise newException(RedisTimeoutError, "Read timed out after " & $r.readTimeoutMs & "ms")
-        except CatchableError as e:
-          r.connected = false
-          try: r.socket.close() except CatchableError: discard
-          finaliseCommand(r)
-          raise newException(RedisError, "Recv failed: " & e.msg, e)
       else:
         n = r.socket.recv(addr result[totalRecv], remaining)
       if n <= 0:
@@ -198,26 +215,14 @@ proc managedRecv(
         raiseReplyError(r, "recv failed")
       totalRecv += n
   else:
+    var numReceived = 0
     if r.readTimeoutMs > 0:
-      let fut = r.socket.recvInto(addr result[0], size)
-      if not await withTimeout(fut, r.readTimeoutMs):
-        r.connected = false
-        try: r.socket.close() except CatchableError: discard
-        finaliseCommand(r)
-        raise newException(RedisTimeoutError, "Read timed out after " & $r.readTimeoutMs & "ms")
-      if fut.failed:
-        r.connected = false
-        finaliseCommand(r)
-        raise fut.readError()
-      let numReceived = fut.read()
-      if numReceived != size:
-        r.connected = false
-        raiseReplyError(r, "recv failed")
+      numReceived = r.awaitWithDeadline(r.socket.recvInto(addr result[0], size), "Read")
     else:
-      let numReceived = await r.socket.recvInto(addr result[0], size)
-      if numReceived != size:
-        r.connected = false
-        raiseReplyError(r, "recv failed")
+      numReceived = await r.socket.recvInto(addr result[0], size)
+    if numReceived != size:
+      r.connected = false
+      raiseReplyError(r, "recv failed")
 
 proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
   if r.pipeline.enabled:
@@ -225,33 +230,13 @@ proc managedRecvLine(r: Redis | AsyncRedis): Future[string] {.multisync.} =
 
   when r is Redis:
     if r.readTimeoutMs > 0:
-      try:
+      r.closeOnTimeout("Read line"):
         result = recvLine(r.socket, timeout = r.readTimeoutMs)
-      except net.TimeoutError:
-        r.connected = false
-        try: r.socket.close() except CatchableError: discard
-        finaliseCommand(r)
-        raise newException(RedisTimeoutError, "Read line timed out after " & $r.readTimeoutMs & "ms")
-      except CatchableError as e:
-        r.connected = false
-        try: r.socket.close() except CatchableError: discard
-        finaliseCommand(r)
-        raise newException(RedisError, "Recv line failed: " & e.msg, e)
     else:
       result = recvLine(r.socket)
   else:
     if r.readTimeoutMs > 0:
-      let fut = recvLine(r.socket)
-      if not await withTimeout(fut, r.readTimeoutMs):
-        r.connected = false
-        try: r.socket.close() except CatchableError: discard
-        finaliseCommand(r)
-        raise newException(RedisTimeoutError, "Read line timed out after " & $r.readTimeoutMs & "ms")
-      if fut.failed:
-        r.connected = false
-        finaliseCommand(r)
-        raise fut.readError()
-      result = fut.read()
+      result = r.awaitWithDeadline(recvLine(r.socket), "Read line")
     else:
       result = await recvLine(r.socket)
 
@@ -1860,6 +1845,14 @@ proc isConnected*(r: Redis | AsyncRedis): bool =
   ## Returns true if the client is currently marked connected and socket is open.
   r.connected and not isSocketClosed(r.socket)
 
+proc setupConnection(r: Redis | AsyncRedis, username, password: string, db: int): Future[void] {.multisync.} =
+  if username.len > 0:
+    await r.auth(username, password)
+  elif password.len > 0:
+    await r.auth(password)
+  if db != 0:
+    discard await r.select(db)
+
 template withReadTimeout*(r: Redis | AsyncRedis, timeoutMs: int, body: untyped): untyped =
   ## Scoped template to temporarily adjust the client socket read deadline,
   ## restoring the previous deadline even if an exception occurs.
@@ -1894,12 +1887,7 @@ proc reconnect*(r: Redis, host = "localhost", port = 6379.Port,
   r.connected = true
   if readTimeoutMs > 0:
     r.readTimeoutMs = readTimeoutMs
-  if username.len > 0:
-    r.auth(username, password)
-  elif password.len > 0:
-    r.auth(password)
-  if db != 0:
-    discard r.select(db)
+  setupConnection(r, username, password, db)
 
 proc reconnectUnix*(r: Redis, path = "/var/run/redis/redis.sock",
                     password = "", username = "", db = 0,
@@ -1962,12 +1950,7 @@ proc reconnect*(r: AsyncRedis, host = "localhost", port = 6379.Port,
   r.connected = true
   if readTimeoutMs > 0:
     r.readTimeoutMs = readTimeoutMs
-  if username.len > 0:
-    await r.auth(username, password)
-  elif password.len > 0:
-    await r.auth(password)
-  if db != 0:
-    discard await r.select(db)
+  await setupConnection(r, username, password, db)
 
 proc reconnectUnix*(r: AsyncRedis, path = "/var/run/redis/redis.sock",
                     password = "", username = "", db = 0,
